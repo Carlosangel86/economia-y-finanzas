@@ -1,0 +1,1395 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>CFO Copilot — Plataforma Financiera</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@latest"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body class="flex flex-col h-screen overflow-hidden">
+
+<!-- ===== BARRA DE SESIÓN Y CONTROL DE ACCESO ===== -->
+<header id="global-session-bar" class="w-full flex items-center justify-between px-2 sm:px-4 text-xs shrink-0 relative z-40 bg-slate-900/95 border-b border-slate-800/80 backdrop-blur-xl overflow-x-auto">
+    <div class="flex items-center gap-2 sm:gap-3">
+        <div class="flex items-center gap-2 cursor-pointer hover:opacity-90 transition" onclick="goTo('menu')" title="Ir al Menú Principal">
+            <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
+            <span class="font-bold text-white tracking-wide text-[13px]">CFO Copilot</span>
+            <span class="pill bg-slate-800 text-slate-400 border border-slate-700 text-[9px] font-mono">RBAC v2.5</span>
+        </div>
+        <div class="h-4 w-[1px] bg-slate-700/60 mx-0.5 sm:mx-1"></div>
+        <div id="session-user-badge" class="flex items-center gap-1.5 sm:gap-2">
+            <span class="text-slate-400 text-[11px] hidden md:inline">Usuario:</span>
+            <span id="session-user-name" class="font-semibold text-white text-[11.5px]">Administrador General</span>
+            <span id="session-role-pill" onclick="openRoleSwitchModal()" class="pill badge-role-admin font-bold text-[9px] uppercase cursor-pointer hover:opacity-85 transition" title="Clic para alternar rol">Administrador</span>
+        </div>
+    </div>
+    
+    <div class="flex items-center gap-2 sm:gap-2.5">
+        <!-- Botón Salir al Menú Principal (se muestra al estar dentro de POS o Asesor) -->
+        <button id="btn-header-back-menu" onclick="goTo('menu')" class="hidden flex items-center gap-1 px-2.5 py-1 rounded-lg bg-slate-800/90 hover:bg-slate-700 border border-slate-700/80 text-slate-200 text-[11px] font-semibold transition" title="Volver al Menú Principal">
+            <i data-lucide="home" class="w-3.5 h-3.5 text-sky-400"></i><span class="hidden sm:inline">Menú</span>
+        </button>
+
+        <!-- Selector y Botón de Modo Demo -->
+        <div id="demo-switcher-wrap" class="flex items-center gap-1.5 bg-slate-800/90 border border-slate-700/80 rounded-xl px-2 py-1 shadow-sm">
+            <button onclick="openRoleSwitchModal()" type="button" class="text-[9.5px] font-bold uppercase tracking-wider text-amber-400 hover:text-amber-300 flex items-center gap-1 transition" title="Abrir selector visual de roles">
+                <i data-lucide="users" class="w-3.5 h-3.5 text-amber-400"></i><span class="hidden md:inline">Modo Demo:</span><span class="md:hidden">Rol:</span>
+            </button>
+            <select id="demo-role-select" onchange="switchDemoUser(this.value)" class="bg-slate-900 border border-slate-700/90 rounded-lg text-white text-[11px] font-medium px-2 py-0.5 outline-none focus:border-amber-400 transition cursor-pointer max-w-[160px] sm:max-w-none">
+                <option value="admin_demo">👑 Admin (Acceso Total)</option>
+                <option value="supervisor_demo">🛡️ Supervisor (Operación)</option>
+                <option value="caja_demo">🛒 Cajero (Ventas)</option>
+                <option value="finanzas_demo">📈 Analista (IA & Métricas)</option>
+                <option value="almacen_demo">📦 Almacén (Catálogo)</option>
+            </select>
+            <button onclick="openRoleSwitchModal()" type="button" class="p-1 rounded-md bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/30 text-amber-300 transition" title="Ver panel con los 5 roles">
+                <i data-lucide="layout-grid" class="w-3 h-3"></i>
+            </button>
+        </div>
+
+        <!-- Botón Salir / Cerrar Sesión -->
+        <button id="btn-header-logout" onclick="logout()" class="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-rose-500/15 hover:bg-rose-500/25 border border-rose-500/30 text-rose-300 font-semibold text-[11px] transition shadow-sm" title="Cerrar sesión actual o cambiar credenciales">
+            <i data-lucide="log-out" class="w-3.5 h-3.5"></i><span>Salir</span>
+        </button>
+    </div>
+</header>
+
+
+<!-- ===== MODAL DE APERTURA DE TURNO ===== -->
+
+<!-- ===== MODAL DE CAMBIO RÁPIDO DE MODO / ROL ===== -->
+<div id="role-switch-modal" class="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4 hidden">
+    <div class="glass max-w-lg w-full rounded-2xl p-6 border border-amber-500/30 shadow-2xl relative text-left">
+        <button onclick="closeRoleSwitchModal()" class="absolute top-4 right-4 p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition" title="Cerrar">
+            <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+
+        <div class="flex items-center gap-3 mb-2">
+            <div class="w-10 h-10 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center shadow-lg shadow-amber-500/20">
+                <i data-lucide="users" class="w-5 h-5"></i>
+            </div>
+            <div>
+                <h3 class="text-base font-bold text-white">Cambiar Modo de Usuario (RBAC)</h3>
+                <p class="text-xs text-slate-400">Selecciona el rol con el que deseas interactuar y evaluar permisos:</p>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 gap-2.5 mt-4">
+            <!-- 1. Admin -->
+            <button onclick="switchDemoUser('admin_demo')" type="button" class="w-full p-3 rounded-xl bg-purple-500/10 hover:bg-purple-500/20 border border-purple-500/30 text-left transition flex items-center justify-between group">
+                <div class="flex items-center gap-3">
+                    <span class="text-2xl">👑</span>
+                    <div>
+                        <div class="text-xs font-bold text-white group-hover:text-purple-300 transition">Administrador General <span class="font-mono text-[10px] text-purple-400">(@admin_demo)</span></div>
+                        <div class="text-[11px] text-slate-400">Control total: Punto de venta, finanzas, modelos IA (Qwen & Gemma), administración de usuarios y configuración.</div>
+                    </div>
+                </div>
+                <i data-lucide="chevron-right" class="w-4 h-4 text-purple-400 shrink-0"></i>
+            </button>
+
+            <!-- 2. Supervisor -->
+            <button onclick="switchDemoUser('supervisor_demo')" type="button" class="w-full p-3 rounded-xl bg-sky-500/10 hover:bg-sky-500/20 border border-sky-500/30 text-left transition flex items-center justify-between group">
+                <div class="flex items-center gap-3">
+                    <span class="text-2xl">🛡️</span>
+                    <div>
+                        <div class="text-xs font-bold text-white group-hover:text-sky-300 transition">Supervisor de Turno <span class="font-mono text-[10px] text-sky-400">(@supervisor_demo)</span></div>
+                        <div class="text-[11px] text-slate-400">Operación de caja, cortes X y Z, supervisión y aprobación justificada de cancelaciones.</div>
+                    </div>
+                </div>
+                <i data-lucide="chevron-right" class="w-4 h-4 text-sky-400 shrink-0"></i>
+            </button>
+
+            <!-- 3. Cajero -->
+            <button onclick="switchDemoUser('caja_demo')" type="button" class="w-full p-3 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 text-left transition flex items-center justify-between group">
+                <div class="flex items-center gap-3">
+                    <span class="text-2xl">🛒</span>
+                    <div>
+                        <div class="text-xs font-bold text-white group-hover:text-emerald-300 transition">Cajero Punto de Venta <span class="font-mono text-[10px] text-emerald-400">(@caja_demo)</span></div>
+                        <div class="text-[11px] text-slate-400">Cobro exclusivo: apertura de turno, métodos de pago (efectivo, tarjeta, transferencia, split) y tickets térmicos.</div>
+                    </div>
+                </div>
+                <i data-lucide="chevron-right" class="w-4 h-4 text-emerald-400 shrink-0"></i>
+            </button>
+
+            <!-- 4. Analista -->
+            <button onclick="switchDemoUser('finanzas_demo')" type="button" class="w-full p-3 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-left transition flex items-center justify-between group">
+                <div class="flex items-center gap-3">
+                    <span class="text-2xl">📈</span>
+                    <div>
+                        <div class="text-xs font-bold text-white group-hover:text-amber-300 transition">Analista Financiero <span class="font-mono text-[10px] text-amber-400">(@finanzas_demo)</span></div>
+                        <div class="text-[11px] text-slate-400">Consultas con IA Qwen/Gemma, correlación Pearson, proyecciones avanzadas (VAN, TIR) y estadísticas de venta.</div>
+                    </div>
+                </div>
+                <i data-lucide="chevron-right" class="w-4 h-4 text-amber-400 shrink-0"></i>
+            </button>
+
+            <!-- 5. Almacén -->
+            <button onclick="switchDemoUser('almacen_demo')" type="button" class="w-full p-3 rounded-xl bg-teal-500/10 hover:bg-teal-500/20 border border-teal-500/30 text-left transition flex items-center justify-between group">
+                <div class="flex items-center gap-3">
+                    <span class="text-2xl">📦</span>
+                    <div>
+                        <div class="text-xs font-bold text-white group-hover:text-teal-300 transition">Encargado de Almacén <span class="font-mono text-[10px] text-teal-400">(@almacen_demo)</span></div>
+                        <div class="text-[11px] text-slate-400">Catálogo de 100 refacciones automotrices, puntos de reorden (ROP), registro y recepción de stock (eliminación de productos restringida a Administrador).</div>
+                    </div>
+                </div>
+                <i data-lucide="chevron-right" class="w-4 h-4 text-teal-400 shrink-0"></i>
+            </button>
+        </div>
+
+        <div class="mt-4 pt-3 border-t border-slate-800 text-center">
+            <button onclick="closeRoleSwitchModal()" type="button" class="pos-btn bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs px-5 py-2">
+                Cerrar Panel
+            </button>
+        </div>
+    </div>
+</div>
+
+
+<!-- ===== MODAL: ¿CUÁNTAS PIEZAS REQUIEREN? (SELECCIÓN AL VENDER) ===== -->
+<div id="sell-qty-modal" class="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-sm flex items-center justify-center p-4 hidden">
+    <div class="glass max-w-md w-full rounded-2xl p-6 border border-sky-500/30 shadow-2xl relative text-left fin">
+        <button onclick="closeSellQtyModal()" type="button" class="absolute top-4 right-4 p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition" title="Cerrar">
+            <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+
+        <div class="flex items-center gap-3 mb-3">
+            <div class="w-10 h-10 rounded-xl bg-sky-500/20 text-sky-400 flex items-center justify-center shadow-lg shadow-sky-500/20 shrink-0">
+                <i data-lucide="shopping-cart" class="w-5 h-5"></i>
+            </div>
+            <div>
+                <h4 class="text-base font-bold text-white">¿Cuántas piezas requieren?</h4>
+                <p class="text-xs text-slate-400">Indica la cantidad requerida para agregar este producto al ticket</p>
+            </div>
+        </div>
+
+        <div class="p-3 rounded-xl bg-slate-900/80 border border-slate-800 mb-4 space-y-1 text-xs">
+            <div class="flex justify-between items-center">
+                <span class="text-slate-400 font-medium">Producto:</span>
+                <b id="sqm-product-name" class="text-white text-right truncate max-w-[240px]">—</b>
+            </div>
+            <div class="flex justify-between items-center">
+                <span class="text-slate-400 font-medium">Precio unitario:</span>
+                <span id="sqm-product-price" class="text-emerald-400 font-mono font-bold">$0</span>
+            </div>
+            <div class="flex justify-between items-center">
+                <span class="text-slate-400 font-medium">Inventario disponible:</span>
+                <span id="sqm-product-stock" class="text-slate-200 font-mono font-semibold">0 u.</span>
+            </div>
+        </div>
+
+        <form onsubmit="confirmSellQtyModal(event)" class="space-y-4">
+            <input type="hidden" id="sqm-product-id" value="">
+            <div>
+                <label class="block text-xs font-bold text-sky-300 uppercase tracking-wider mb-2">
+                    Número de piezas que requiere el cliente:
+                </label>
+                <div class="flex items-center gap-2">
+                    <button type="button" onclick="stepSellQtyModal(-1)" class="w-12 h-11 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white font-bold text-xl flex items-center justify-center transition shrink-0">
+                        −
+                    </button>
+                    <input id="sqm-qty-input" type="number" min="1" value="1" oninput="updateSellQtyModalSubtotal()" class="pos-input text-center text-xl font-bold mono text-emerald-400 h-11" required>
+                    <button type="button" onclick="stepSellQtyModal(1)" class="w-12 h-11 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white font-bold text-xl flex items-center justify-center transition shrink-0">
+                        +
+                    </button>
+                </div>
+                <!-- Accesos rápidos de piezas -->
+                <div class="flex items-center gap-1.5 mt-2.5">
+                    <span class="text-[10px] text-slate-500 font-bold uppercase mr-1">Rápido:</span>
+                    <button type="button" onclick="setSellQtyModalValue(1)" class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 text-xs font-mono font-bold transition">1</button>
+                    <button type="button" onclick="setSellQtyModalValue(2)" class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 text-xs font-mono font-bold transition">2</button>
+                    <button type="button" onclick="setSellQtyModalValue(3)" class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 text-xs font-mono font-bold transition">3</button>
+                    <button type="button" onclick="setSellQtyModalValue(4)" class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 text-xs font-mono font-bold transition">4</button>
+                    <button type="button" onclick="setSellQtyModalValue(5)" class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 text-xs font-mono font-bold transition">5</button>
+                    <button type="button" id="sqm-btn-max" onclick="setSellQtyModalMax()" class="px-2.5 py-1 rounded-lg bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/30 text-emerald-300 text-xs font-mono font-bold transition">Máx</button>
+                </div>
+            </div>
+
+            <div class="flex justify-between items-center pt-2 border-t border-slate-800/80">
+                <div class="text-xs text-slate-400">
+                    Subtotal estimado: <b id="sqm-subtotal" class="text-emerald-400 font-mono text-sm font-bold">$0</b>
+                </div>
+                <div class="flex gap-2">
+                    <button type="button" onclick="closeSellQtyModal()" class="pos-btn bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs py-2 px-4">Cancelar</button>
+                    <button type="submit" class="pos-btn bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs py-2 px-4 flex items-center gap-1.5 shadow-lg shadow-emerald-600/20">
+                        <i data-lucide="plus-circle" class="w-4 h-4"></i>Agregar al Ticket
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- ===== MODAL: MODIFICAR PIEZAS A LLEVAR EN TICKET ===== -->
+<div id="ticket-modify-qty-modal" class="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-sm flex items-center justify-center p-4 hidden">
+    <div class="glass max-w-md w-full rounded-2xl p-6 border border-amber-500/30 shadow-2xl relative text-left fin">
+        <button onclick="closeTicketModifyModal()" type="button" class="absolute top-4 right-4 p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition" title="Cerrar">
+            <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+
+        <div class="flex items-center gap-3 mb-3">
+            <div class="w-10 h-10 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center shadow-lg shadow-amber-500/20 shrink-0">
+                <i data-lucide="edit-3" class="w-5 h-5"></i>
+            </div>
+            <div>
+                <h4 class="text-base font-bold text-white">Modificar Piezas a Llevar</h4>
+                <p class="text-xs text-slate-400">Ajusta la cantidad de piezas o indica 0 para retirar el producto</p>
+            </div>
+        </div>
+
+        <div class="p-3 rounded-xl bg-slate-900/80 border border-slate-800 mb-3 space-y-1 text-xs">
+            <div class="flex justify-between items-center">
+                <span class="text-slate-400 font-medium">Producto en ticket:</span>
+                <b id="tmq-product-name" class="text-white text-right truncate max-w-[240px]">—</b>
+            </div>
+            <div class="flex justify-between items-center">
+                <span class="text-slate-400 font-medium">Precio unitario:</span>
+                <span id="tmq-product-price" class="text-emerald-400 font-mono font-bold">$0</span>
+            </div>
+            <div class="flex justify-between items-center">
+                <span class="text-slate-400 font-medium">Stock en almacén:</span>
+                <span id="tmq-product-stock" class="text-slate-200 font-mono font-semibold">0 u.</span>
+            </div>
+        </div>
+
+        <!-- Aviso clave sobre poner en 0 -->
+        <div class="p-2.5 rounded-xl bg-rose-500/10 border border-rose-500/25 text-rose-300 text-xs flex items-center gap-2 mb-3.5">
+            <i data-lucide="info" class="w-4 h-4 shrink-0 text-rose-400"></i>
+            <span>Si el número de piezas se pone en <b>0</b>, este producto se <b>quitará automáticamente</b> del ticket.</span>
+        </div>
+
+        <form onsubmit="confirmTicketModifyModal(event)" class="space-y-4">
+            <input type="hidden" id="tmq-item-id" value="">
+            <div>
+                <label class="block text-xs font-bold text-amber-300 uppercase tracking-wider mb-2">
+                    Nuevo número de piezas que se van a llevar:
+                </label>
+                <div class="flex items-center gap-2">
+                    <button type="button" onclick="stepTicketModifyModal(-1)" class="w-12 h-11 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white font-bold text-xl flex items-center justify-center transition shrink-0">
+                        −
+                    </button>
+                    <input id="tmq-qty-input" type="number" min="0" value="1" oninput="updateTicketModifyModalSubtotal()" class="pos-input text-center text-xl font-bold mono text-amber-400 h-11" required>
+                    <button type="button" onclick="stepTicketModifyModal(1)" class="w-12 h-11 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white font-bold text-xl flex items-center justify-center transition shrink-0">
+                        +
+                    </button>
+                </div>
+                <!-- Accesos rápidos -->
+                <div class="flex items-center gap-1.5 mt-2.5 flex-wrap">
+                    <button type="button" onclick="setTicketModifyModalValue(0)" class="px-2.5 py-1 rounded-lg bg-rose-500/15 hover:bg-rose-500/25 border border-rose-500/30 text-rose-300 text-xs font-bold transition flex items-center gap-1">
+                        <i data-lucide="trash-2" class="w-3 h-3"></i>0 (Quitar)
+                    </button>
+                    <button type="button" onclick="setTicketModifyModalValue(1)" class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 text-xs font-mono font-bold transition">1</button>
+                    <button type="button" onclick="setTicketModifyModalValue(2)" class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 text-xs font-mono font-bold transition">2</button>
+                    <button type="button" onclick="setTicketModifyModalValue(3)" class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 text-xs font-mono font-bold transition">3</button>
+                    <button type="button" onclick="setTicketModifyModalValue(5)" class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 text-xs font-mono font-bold transition">5</button>
+                    <button type="button" id="tmq-btn-max" onclick="setTicketModifyModalMax()" class="px-2.5 py-1 rounded-lg bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/30 text-emerald-300 text-xs font-mono font-bold transition">Máx</button>
+                </div>
+            </div>
+
+            <div class="flex justify-between items-center pt-2 border-t border-slate-800/80">
+                <div class="text-xs text-slate-400">
+                    Nuevo subtotal: <b id="tmq-subtotal" class="text-amber-400 font-mono text-sm font-bold">$0</b>
+                </div>
+                <div class="flex gap-2">
+                    <button type="button" onclick="closeTicketModifyModal()" class="pos-btn bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs py-2 px-4">Cancelar</button>
+                    <button type="submit" id="tmq-btn-submit" class="pos-btn bg-amber-600 hover:bg-amber-500 text-white font-bold text-xs py-2 px-4 flex items-center gap-1.5 shadow-lg shadow-amber-600/20">
+                        <i data-lucide="check" class="w-4 h-4"></i>Actualizar Piezas
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div id="shift-open-modal" class="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-sm flex items-center justify-center p-4 hidden">
+    <div class="glass max-w-sm w-full rounded-2xl p-6 border border-emerald-500/30 shadow-2xl">
+        <div class="flex items-center gap-2 mb-3">
+            <div class="w-9 h-9 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center"><i data-lucide="play" class="w-5 h-5"></i></div>
+            <h4 class="text-base font-bold text-white">Apertura de Turno</h4>
+        </div>
+        <p class="text-xs text-slate-300 mb-4">Ingresa el fondo de caja inicial para comenzar a cobrar en el punto de venta:</p>
+        <div class="mb-4">
+            <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Fondo Inicial en Efectivo ($ MXN)</label>
+            <input type="number" id="shift-initial-cash" value="500" min="0" step="50" class="pos-input w-full mono text-lg text-emerald-400 font-bold">
+        </div>
+        <div class="flex justify-end gap-2">
+            <button onclick="closeShiftOpenModal()" class="pos-btn bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs py-2 px-4">Cancelar</button>
+            <button onclick="confirmOpenShift()" class="pos-btn bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs py-2 px-4 flex items-center gap-1.5">
+                <i data-lucide="check" class="w-4 h-4"></i>Abrir Turno
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- ===== MODAL DE CORTE X (LECTURA PARCIAL) ===== -->
+<div id="shift-cutx-modal" class="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-sm flex items-center justify-center p-4 hidden">
+    <div class="glass max-w-md w-full rounded-2xl p-6 border border-sky-500/30 shadow-2xl">
+        <div class="flex items-center justify-between mb-4">
+            <div class="flex items-center gap-2">
+                <div class="w-9 h-9 rounded-xl bg-sky-500/20 text-sky-400 flex items-center justify-center"><i data-lucide="file-text" class="w-5 h-5"></i></div>
+                <div>
+                    <h4 class="text-base font-bold text-white">Corte X (Lectura Parcial)</h4>
+                    <span class="text-[10px] text-slate-400 mono" id="cutx-folio"></span>
+                </div>
+            </div>
+            <button onclick="closeCutXModal()" class="text-slate-400 hover:text-white"><i data-lucide="x" class="w-5 h-5"></i></button>
+        </div>
+        <div class="space-y-2 text-xs bg-slate-950/60 p-3.5 rounded-xl border border-slate-800 mb-4">
+            <div class="flex justify-between text-slate-400"><span>Cajero en Turno:</span><b class="text-white" id="cutx-cashier"></b></div>
+            <div class="flex justify-between text-slate-400"><span>Inicio de Turno:</span><span class="mono text-slate-300" id="cutx-start"></span></div>
+            <div class="border-t border-slate-800/80 my-1.5"></div>
+            <div class="flex justify-between"><span>Fondo Inicial de Caja:</span><b class="mono text-slate-200" id="cutx-float"></b></div>
+            <div class="flex justify-between text-emerald-400"><span>Ventas en Efectivo:</span><b class="mono" id="cutx-cash-sales"></b></div>
+            <div class="flex justify-between text-sky-400"><span>Ventas con Tarjeta:</span><b class="mono" id="cutx-card-sales"></b></div>
+            <div class="flex justify-between text-purple-400"><span>Ventas por Transferencia:</span><b class="mono" id="cutx-transf-sales"></b></div>
+            <div class="border-t border-slate-800/80 my-1.5"></div>
+            <div class="flex justify-between text-white font-bold text-sm"><span>Ventas Totales:</span><span class="mono text-emerald-400" id="cutx-total-sales"></span></div>
+            <div class="flex justify-between text-amber-300 font-bold bg-amber-500/10 p-2 rounded-lg border border-amber-500/20 mt-2">
+                <span>Efectivo Esperado en Gaveta:</span><span class="mono text-base" id="cutx-expected-cash"></span>
+            </div>
+        </div>
+        <div class="flex justify-end gap-2">
+            <button onclick="closeCutXModal()" class="pos-btn bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs py-2 px-4">Cerrar Lectura</button>
+        </div>
+    </div>
+</div>
+
+<!-- ===== MODAL DE CORTE Z (CIERRE FISCAL Y ARQUEO) ===== -->
+<div id="shift-cutz-modal" class="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-sm flex items-center justify-center p-4 hidden">
+    <div class="glass max-w-md w-full rounded-2xl p-6 border border-amber-500/30 shadow-2xl">
+        <div class="flex items-center justify-between mb-4">
+            <div class="flex items-center gap-2">
+                <div class="w-9 h-9 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center"><i data-lucide="check-square" class="w-5 h-5"></i></div>
+                <div>
+                    <h4 class="text-base font-bold text-white">Corte Z (Cierre de Turno y Arqueo)</h4>
+                    <span class="text-[10px] text-slate-400">Liquidación formal de caja</span>
+                </div>
+            </div>
+            <button onclick="closeCutZModal()" class="text-slate-400 hover:text-white"><i data-lucide="x" class="w-5 h-5"></i></button>
+        </div>
+        <div class="space-y-3 mb-4">
+            <div class="bg-slate-950/60 p-3 rounded-xl border border-slate-800 text-xs space-y-1.5">
+                <div class="flex justify-between text-slate-400"><span>Ventas del Turno:</span><b class="mono text-emerald-400" id="cutz-total-sales"></b></div>
+                <div class="flex justify-between text-slate-400"><span>Efectivo Contable Esperado:</span><b class="mono text-amber-300 text-sm" id="cutz-expected-cash"></b></div>
+            </div>
+            <div>
+                <label class="block text-[11px] font-bold text-slate-300 uppercase tracking-wider mb-1.5">Efectivo Físico Contado en Caja ($)</label>
+                <input type="number" id="cutz-physical-cash" oninput="onCutzPhysicalCashChange()" step="10" placeholder="Ej. 1250" class="pos-input w-full mono text-lg text-white font-bold">
+            </div>
+            <div class="flex items-center justify-between p-2.5 rounded-lg bg-slate-900 border border-slate-800 text-xs">
+                <span class="text-slate-400 font-semibold">Discrepancia (Sobrante/Faltante):</span>
+                <span id="cutz-discrepancy" class="font-bold mono text-sm">$0.00</span>
+            </div>
+        </div>
+        <div class="flex justify-end gap-2">
+            <button onclick="closeCutZModal()" class="pos-btn bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs py-2 px-4">Cancelar</button>
+            <button onclick="confirmCloseShiftZ()" class="pos-btn bg-amber-600 hover:bg-amber-500 text-white font-bold text-xs py-2 px-4 flex items-center gap-1.5">
+                <i data-lucide="lock" class="w-4 h-4"></i>Finalizar y Cerrar Turno
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- ===== MODAL DE LOGIN ===== -->
+<div id="login-modal" class="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-xl flex items-center justify-center p-4 hidden">
+    <div class="glass w-full max-w-md rounded-2xl border border-slate-700/60 p-6 shadow-2xl relative text-left">
+        <button onclick="closeLoginModal()" type="button" class="absolute top-4 right-4 p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition" title="Cerrar modal de acceso">
+            <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+        <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-sky-400 to-indigo-600 flex items-center justify-center mx-auto mb-4 shadow-lg shadow-sky-600/30">
+            <i data-lucide="shield-check" class="text-white w-6 h-6"></i>
+        </div>
+        <h3 class="text-lg font-bold text-white text-center mb-1">Inicio de Sesión — CFO Copilot</h3>
+        <p class="text-xs text-slate-400 text-center mb-5">Ingresa tus credenciales para acceder a la plataforma.</p>
+        
+        <div id="login-error" class="hidden mb-4 p-2.5 rounded-xl bg-rose-500/15 border border-rose-500/30 text-rose-300 text-xs flex items-center gap-2">
+            <i data-lucide="alert-circle" class="w-4 h-4 shrink-0"></i>
+            <span id="login-error-msg">Credenciales incorrectas.</span>
+        </div>
+
+        <form onsubmit="handleLoginForm(event)" class="space-y-3.5">
+            <div>
+                <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Usuario</label>
+                <input id="login-username" class="pos-input" placeholder="ej: admin_demo o caja_demo" required autocomplete="username">
+            </div>
+            <div>
+                <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Contraseña</label>
+                <input id="login-password" type="password" class="pos-input" placeholder="••••" required autocomplete="current-password">
+            </div>
+            <button type="submit" class="pos-btn bg-gradient-to-r from-sky-600 to-indigo-600 hover:from-sky-500 hover:to-indigo-500 text-white w-full justify-center py-2.5 text-sm font-semibold shadow-lg shadow-sky-600/20 mt-2">
+                <i data-lucide="log-in" class="w-4 h-4"></i>Entrar al Sistema
+            </button>
+        </form>
+
+        <!-- Accesos Demo Rápidos para la Presentación de Clase -->
+        <div class="mt-6 pt-5 border-t border-slate-800">
+            <div class="text-[10px] uppercase font-bold tracking-wider text-amber-400 mb-2 flex items-center gap-1.5">
+                <i data-lucide="flask-conical" class="w-3.5 h-3.5"></i>Accesos Rápidos Demo (Clave: 1234)
+            </div>
+            <div class="grid grid-cols-2 gap-2 text-left">
+                <button onclick="quickLoginDemo('admin_demo')" type="button" class="p-2 rounded-xl bg-purple-500/10 hover:bg-purple-500/20 border border-purple-500/30 text-purple-300 text-[11px] transition text-left">
+                    <b class="block text-white">👑 Admin</b>admin_demo
+                </button>
+                <button onclick="quickLoginDemo('supervisor_demo')" type="button" class="p-2 rounded-xl bg-sky-500/10 hover:bg-sky-500/20 border border-sky-500/30 text-sky-300 text-[11px] transition text-left">
+                    <b class="block text-white">🛡️ Supervisor</b>supervisor_demo
+                </button>
+                <button onclick="quickLoginDemo('caja_demo')" type="button" class="p-2 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 text-emerald-300 text-[11px] transition text-left">
+                    <b class="block text-white">🛒 Cajero</b>caja_demo
+                </button>
+                <button onclick="quickLoginDemo('finanzas_demo')" type="button" class="p-2 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-amber-300 text-[11px] transition text-left">
+                    <b class="block text-white">📈 Analista</b>finanzas_demo
+                </button>
+                <button onclick="quickLoginDemo('almacen_demo')" type="button" class="col-span-2 p-2 rounded-xl bg-teal-500/10 hover:bg-teal-500/20 border border-teal-500/30 text-teal-300 text-[11px] transition text-left flex items-center justify-between">
+                    <div><b class="text-white">📦 Encargado de Almacén</b>almacen_demo</div>
+                    <span class="pill bg-teal-500/20 text-teal-300 border border-teal-500/30 text-[9px]">Catálogo & Stock</span>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ===== MODAL DE ACCESO DENEGADO ===== -->
+<div id="access-denied-modal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 hidden">
+    <div class="glass w-full max-w-sm rounded-2xl border border-rose-500/40 p-6 shadow-2xl text-center">
+        <div class="w-12 h-12 rounded-xl bg-rose-500/20 text-rose-400 border border-rose-500/30 flex items-center justify-center mx-auto mb-3">
+            <i data-lucide="shield-x" class="w-6 h-6"></i>
+        </div>
+        <h4 class="text-base font-bold text-white mb-1.5">Operación No Permitida</h4>
+        <p id="access-denied-text" class="text-xs text-slate-300 mb-4 leading-relaxed">Tu rol actual no tiene los privilegios necesarios para ejecutar esta acción.</p>
+        <button onclick="closeAccessDeniedModal()" class="pos-btn bg-slate-800 hover:bg-slate-700 text-white w-full justify-center">
+            Entendido
+        </button>
+    </div>
+</div>
+
+<!-- ===== MODAL DE CANCELACIÓN / EVALUACIÓN ===== -->
+<div id="cancel-action-modal" class="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4 hidden">
+    <div class="glass w-full max-w-md rounded-2xl border border-slate-700/60 p-6 shadow-2xl text-left">
+        <div class="flex items-center justify-between mb-3">
+            <h4 id="cancel-modal-title" class="text-base font-bold text-white flex items-center gap-2">
+                <i data-lucide="alert-triangle" class="w-4 h-4 text-amber-400"></i>Gestión de Cancelación
+            </h4>
+            <button onclick="closeCancelModal()" class="text-slate-400 hover:text-white"><i data-lucide="x" class="w-4 h-4"></i></button>
+        </div>
+        <p id="cancel-modal-desc" class="text-xs text-slate-300 mb-3"></p>
+        <div id="cancel-modal-sale-info" class="p-3 rounded-xl bg-slate-900/60 border border-slate-800 text-xs mb-3 space-y-1"></div>
+        <div class="space-y-1.5 mb-4">
+            <label id="cancel-modal-input-label" class="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Motivo / Justificación Obligatoria</label>
+            <textarea id="cancel-modal-reason" rows="2" class="pos-input text-xs" placeholder="Describe la justificación..."></textarea>
+        </div>
+        <div id="cancel-modal-actions" class="flex gap-2 justify-end"></div>
+    </div>
+</div>
+
+
+<!-- ===== MENÚ PRINCIPAL ===== -->
+<div id="view-menu" class="flex-1 flex flex-col overflow-hidden items-center justify-center relative">
+<div class="absolute inset-0 opacity-[0.015] pointer-events-none" style="background-image:radial-gradient(#94a3b8 1px,transparent 1px);background-size:30px 30px"></div>
+<div class="z-10 text-center mb-12 fin">
+    <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-sky-400 via-blue-500 to-indigo-600 flex items-center justify-center mx-auto mb-5 shadow-xl shadow-sky-600/25"><i data-lucide="brain-circuit" class="text-white w-8 h-8"></i></div>
+    <h1 class="text-3xl font-bold text-white mb-2">CFO Copilot <span class="pill bg-sky-900/60 text-sky-400 border border-sky-800/50 ml-2">Pro v2</span></h1>
+    <p class="text-slate-400 text-sm">Plataforma de Inteligencia Financiera para Pequeños Empresarios</p>
+    
+    <!-- Barra Rápida de Cambio de Modo / Rol en Menú Principal -->
+    <div class="mt-4 flex flex-wrap items-center justify-center gap-1.5 p-1.5 bg-slate-900/80 border border-slate-800/90 rounded-2xl shadow-xl max-w-2xl mx-auto">
+        <span class="text-[10px] font-bold uppercase tracking-wider text-amber-400 px-2 flex items-center gap-1">
+            <i data-lucide="users" class="w-3.5 h-3.5"></i>Modo de Usuario:
+        </span>
+        <button onclick="switchDemoUser('admin_demo')" type="button" class="px-2.5 py-1 rounded-xl text-[11px] font-semibold transition flex items-center gap-1 border border-purple-500/30 bg-purple-500/10 hover:bg-purple-500/20 text-purple-300" title="Control Total">
+            👑 Admin
+        </button>
+        <button onclick="switchDemoUser('supervisor_demo')" type="button" class="px-2.5 py-1 rounded-xl text-[11px] font-semibold transition flex items-center gap-1 border border-sky-500/30 bg-sky-500/10 hover:bg-sky-500/20 text-sky-300" title="Supervisión y Cortes X/Z">
+            🛡️ Supervisor
+        </button>
+        <button onclick="switchDemoUser('caja_demo')" type="button" class="px-2.5 py-1 rounded-xl text-[11px] font-semibold transition flex items-center gap-1 border border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300" title="Ventas Exclusivas">
+            🛒 Cajero
+        </button>
+        <button onclick="switchDemoUser('finanzas_demo')" type="button" class="px-2.5 py-1 rounded-xl text-[11px] font-semibold transition flex items-center gap-1 border border-amber-500/30 bg-amber-500/10 hover:bg-amber-500/20 text-amber-300" title="Finanzas & Modelos IA">
+            📈 Analista
+        </button>
+        <button onclick="switchDemoUser('almacen_demo')" type="button" class="px-2.5 py-1 rounded-xl text-[11px] font-semibold transition flex items-center gap-1 border border-teal-500/30 bg-teal-500/10 hover:bg-teal-500/20 text-teal-300" title="Catálogo & Existencias">
+            📦 Almacén
+        </button>
+    </div>
+</div>
+<div class="flex gap-6 z-10">
+    <div id="menu-card-advisor" class="menu-card w-72 fin transition-all" onclick="goTo('advisor')" style="animation-delay:.1s">
+        <div class="w-14 h-14 rounded-xl bg-gradient-to-br from-sky-500 to-indigo-600 flex items-center justify-center mx-auto mb-5 shadow-lg shadow-sky-600/25"><i data-lucide="message-square-text" class="text-white w-7 h-7"></i></div>
+        <h2 class="text-lg font-bold text-white mb-2">Asesoría Financiera</h2>
+        <p id="menu-adv-desc" class="text-slate-400 text-xs leading-relaxed">Valuación de negocio, análisis de crédito, simulación de escenarios y explicaciones con IA.</p><div id="menu-adv-role-badge" class="mt-2.5"></div>
+        <div id="menu-pos-indicator" class="hidden mt-3 text-[10px] text-emerald-400 font-semibold flex items-center justify-center gap-1"><i data-lucide="link-2" class="w-3 h-3"></i>Datos POS disponibles para sincronizar</div>
+    </div>
+    <div id="menu-card-pos" class="menu-card w-72 fin transition-all" onclick="goTo('pos')" style="animation-delay:.2s">
+        <div class="w-14 h-14 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center mx-auto mb-5 shadow-lg shadow-emerald-600/25"><i data-lucide="shopping-cart" class="text-white w-7 h-7"></i></div>
+        <h2 class="text-lg font-bold text-white mb-2">Punto de Venta</h2>
+        <p class="text-slate-400 text-xs leading-relaxed">Registra productos, ventas diarias y gastos. Historial completo y exportable.</p>
+        <div id="menu-pos-count" class="hidden mt-3 text-[10px] text-emerald-400 font-semibold flex items-center justify-center gap-1 mono"></div>
+    </div>
+</div>
+</div>
+
+<!-- ===== MÓDULO: ASESORÍA FINANCIERA ===== -->
+<div id="view-advisor" class="flex-1 flex overflow-hidden hidden">
+
+<!-- Chat -->
+<div class="w-[42%] flex flex-col border-r border-slate-800/80 bg-slate-900 relative z-10 shadow-2xl" style="min-width:360px">
+<div class="px-5 py-3.5 border-b border-slate-800/60 flex items-center justify-between bg-slate-900/95 backdrop-blur-xl">
+    <div class="flex items-center gap-3">
+        <button onclick="goTo('menu')" class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 text-xs font-semibold transition shadow-sm" title="Salir al Menú Principal"><i data-lucide="arrow-left" class="w-4 h-4"></i><span>Salir al Menú</span></button>
+        <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-sky-400 to-indigo-500 flex items-center justify-center shadow-lg shadow-sky-600/20"><i data-lucide="brain-circuit" class="text-white w-5 h-5"></i></div>
+        <div><h2 class="text-sm font-bold text-white flex items-center gap-2">Asesoría Financiera</h2><p class="text-[10px] text-slate-500 mono">Zero-Hallucination Engine</p></div>
+    </div>
+    <div class="flex items-center gap-2">
+        <button onclick="exportAdvisorDB()" title="Exportar" class="text-[10px] text-slate-500 hover:text-emerald-400 flex items-center gap-1 transition bg-slate-800/50 px-2.5 py-1.5 rounded-lg border border-slate-700/50"><i data-lucide="download" class="w-3 h-3"></i>Exportar</button>
+    </div>
+</div>
+<div class="px-5 py-2.5 flex items-center gap-0.5 text-[9px] font-bold uppercase tracking-[.1em] border-b border-slate-800/40">
+    <span id="s1" class="flex items-center gap-1 text-sky-400"><span class="w-4 h-4 rounded-full bg-sky-500 text-white flex items-center justify-center text-[8px]">1</span>Ventas</span><i data-lucide="chevron-right" class="w-3 h-3 text-slate-700 mx-1"></i>
+    <span id="s2" class="flex items-center gap-1 text-slate-600"><span class="w-4 h-4 rounded-full bg-slate-700 text-slate-400 flex items-center justify-center text-[8px]">2</span>Perfil</span><i data-lucide="chevron-right" class="w-3 h-3 text-slate-700 mx-1"></i>
+    <span id="s3" class="flex items-center gap-1 text-slate-600"><span class="w-4 h-4 rounded-full bg-slate-700 text-slate-400 flex items-center justify-center text-[8px]">3</span>Deuda</span><i data-lucide="chevron-right" class="w-3 h-3 text-slate-700 mx-1"></i>
+    <span id="s4" class="flex items-center gap-1 text-slate-600"><span class="w-4 h-4 rounded-full bg-slate-700 text-slate-400 flex items-center justify-center text-[8px]">4</span>Escenarios</span>
+</div>
+<div id="chat" class="flex-1 px-5 pb-48 pt-4 overflow-y-auto space-y-5 scroll-smooth">
+    <div class="flex flex-col items-start max-w-[92%] fin"><span class="text-[9px] text-slate-500 mb-1 ml-1 font-semibold flex items-center gap-1"><i data-lucide="shield-check" class="w-3 h-3 text-sky-500"></i>CFO Copilot</span><div class="bot-bubble border-l-2 border-l-sky-500">Bienvenido. <b>No asumo ni invento datos.</b><br><br><span class="text-sky-400 font-medium">¿Cuánto vendes al mes y cuáles son tus costos operativos?</span></div></div>
+    <div id="pos-sync-banner" class="hidden fin"></div>
+</div>
+<div id="typ" class="hidden absolute bottom-44 left-5 bg-slate-800/90 backdrop-blur px-5 py-2.5 rounded-full border border-slate-700 shadow-2xl z-30"><div class="typing"><span></span><span></span><span></span></div></div>
+<div class="absolute bottom-0 w-full p-4 bg-gradient-to-t from-slate-900 via-slate-900/98 to-transparent z-20">
+    <div id="hints" class="flex gap-2 overflow-x-auto mb-2.5 hide-sb pb-1"></div>
+    <div id="db-toast" class="hidden mb-2 p-2 rounded-lg bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 text-[11px] text-center font-medium fin">✓ Datos exportados</div>
+    <div class="flex items-end gap-2" id="iw">
+        <div class="relative flex-1"><textarea id="msg" rows="1" class="w-full bg-slate-800/85 border border-slate-700/60 rounded-xl py-3.5 pl-4 pr-12 text-sm text-white focus:outline-none focus:ring-2 focus:ring-sky-500/40 transition shadow-xl placeholder:text-slate-500 resize-none overflow-hidden" placeholder="Describe tus números..." onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendAdv();}"></textarea><button onclick="sendAdv()" class="absolute right-2.5 top-2.5 p-2 rounded-lg bg-gradient-to-br from-sky-500 to-blue-600 hover:from-sky-400 hover:to-blue-500 text-white transition shadow-lg shadow-sky-600/20"><i data-lucide="arrow-up" class="w-4 h-4"></i></button></div>
+    </div>
+</div>
+</div>
+
+<!-- Dashboard -->
+<div class="flex-1 bg-[#020617] flex flex-col relative overflow-hidden">
+<div class="absolute inset-0 opacity-[0.012] pointer-events-none" style="background-image:radial-gradient(#94a3b8 1px,transparent 1px);background-size:30px 30px"></div>
+<div class="flex border-b border-slate-800/60 px-5 pt-3 gap-1.5 z-10 bg-slate-950/50 backdrop-blur-md">
+    <button onclick="showAdvTab('dash')" id="t-dash" class="tab-on px-4 py-2 rounded-t-lg border border-b-0 border-slate-700/60 text-[10px] font-bold uppercase tracking-wider transition flex items-center gap-1.5"><i data-lucide="layout-dashboard" class="w-3.5 h-3.5"></i>Dashboard</button>
+    <button onclick="showAdvTab('ratios')" id="t-ratios" class="px-4 py-2 rounded-t-lg border border-b-0 border-transparent text-[10px] font-bold uppercase tracking-wider text-slate-500 hover:text-slate-300 transition flex items-center gap-1.5"><i data-lucide="ratio" class="w-3.5 h-3.5"></i>Razones</button>
+    <button onclick="showAdvTab('back')" id="t-back" class="px-4 py-2 rounded-t-lg border border-b-0 border-transparent text-[10px] font-bold uppercase tracking-wider text-slate-500 hover:text-slate-300 transition flex items-center gap-1.5"><i data-lucide="server" class="w-3.5 h-3.5"></i>Backend</button>
+    <button onclick="showAdvTab('amor')" id="t-amor" class="px-4 py-2 rounded-t-lg border border-b-0 border-transparent text-[10px] font-bold uppercase tracking-wider text-slate-500 hover:text-slate-300 transition flex items-center gap-1.5"><i data-lucide="table-2" class="w-3.5 h-3.5"></i>Amortización</button>
+</div>
+<div id="v-dash" class="flex-1 overflow-y-auto p-5 space-y-4 z-10">
+    <div class="grid grid-cols-4 gap-3"><div class="card"><div class="text-[9px] text-slate-500 uppercase font-bold tracking-wider mb-1.5">EBITDA Anual</div><div class="text-xl font-bold mono text-slate-600" id="m-ebitda">—</div></div><div class="card"><div class="text-[9px] text-slate-500 uppercase font-bold tracking-wider mb-1.5">Valor Empresarial</div><div class="text-xl font-bold mono text-slate-600" id="m-ev">—</div></div><div class="card"><div class="text-[9px] text-slate-500 uppercase font-bold tracking-wider mb-1.5">Margen Op.</div><div class="text-xl font-bold mono text-slate-600" id="m-margin">—</div></div><div class="card"><div class="text-[9px] text-slate-500 uppercase font-bold tracking-wider mb-1.5">Payback</div><div class="text-xl font-bold mono text-slate-600" id="m-payback">—</div></div></div>
+    <!-- FILA 2 DE MÉTRICAS AVANZADAS (TIR, VAN, MARGEN DE CONTRIBUCIÓN, PUNTO DE EQUILIBRIO FORMAL) -->
+    <div class="grid grid-cols-4 gap-3 mt-3">
+        <div class="card border-sky-500/20 bg-sky-500/5">
+            <div class="text-[9px] text-sky-400 uppercase font-bold tracking-wider mb-1 flex items-center justify-between">
+                <span>VAN (NPV 3 Años)</span>
+                <span class="mono text-[8.5px]">Desc. WACC</span>
+            </div>
+            <div class="text-xl font-bold mono text-sky-300" id="m-van">—</div>
+            <div class="text-[9.5px] text-slate-500 mt-0.5">Valor Actual Neto del proyecto</div>
+        </div>
+        <div class="card border-emerald-500/20 bg-emerald-500/5">
+            <div class="text-[9px] text-emerald-400 uppercase font-bold tracking-wider mb-1 flex items-center justify-between">
+                <span>TIR (IRR Anual)</span>
+                <span class="mono text-[8.5px]">Newton-Raphson</span>
+            </div>
+            <div class="text-xl font-bold mono text-emerald-300" id="m-tir">—</div>
+            <div class="text-[9.5px] text-slate-500 mt-0.5">Tasa Interna de Retorno proyectada</div>
+        </div>
+        <div class="card border-purple-500/20 bg-purple-500/5">
+            <div class="text-[9px] text-purple-400 uppercase font-bold tracking-wider mb-1 flex items-center justify-between">
+                <span>Margen Contribución</span>
+                <span class="mono text-[8.5px]">% MC</span>
+            </div>
+            <div class="text-xl font-bold mono text-purple-300" id="m-mc">—</div>
+            <div class="text-[9.5px] text-slate-500 mt-0.5">Ventas menos Costos Variables</div>
+        </div>
+        <div class="card border-amber-500/20 bg-amber-500/5">
+            <div class="text-[9px] text-amber-400 uppercase font-bold tracking-wider mb-1 flex items-center justify-between">
+                <span>P. Equilibrio Formal</span>
+                <span class="mono text-[8.5px]">CFT / %MC</span>
+            </div>
+            <div class="text-xl font-bold mono text-amber-300" id="m-pe">—</div>
+            <div class="text-[9.5px] text-slate-500 mt-0.5">Ventas mínimas para no perder</div>
+        </div>
+    </div>
+    <div class="grid grid-cols-5 gap-4">
+        <div class="col-span-2 glass rounded-xl p-4"><h4 class="text-[10px] text-slate-400 uppercase font-bold tracking-wider mb-3">Estructura Mensual</h4><div class="relative flex items-center justify-center" style="height:185px"><canvas id="cDonut"></canvas><div class="absolute text-center pointer-events-none"><div class="text-[10px] text-slate-500">Margen</div><div class="text-xl font-bold mono text-slate-400" id="donutC">—</div></div></div></div>
+        <div class="col-span-1 glass rounded-xl p-4 flex flex-col items-center justify-center"><h4 class="text-[10px] text-slate-400 uppercase font-bold tracking-wider mb-4">DSCR</h4><div class="relative" style="width:105px;height:105px"><svg viewBox="0 0 36 36" class="w-full h-full -rotate-90"><path d="M18 2.0845a15.9155 15.9155 0 010 31.831 15.9155 15.9155 0 010-31.831" fill="none" stroke="#1e293b" stroke-width="2.5"/><path id="garc" d="M18 2.0845a15.9155 15.9155 0 010 31.831 15.9155 15.9155 0 010-31.831" fill="none" stroke="#334155" stroke-width="2.5" stroke-dasharray="0,100" class="gauge-arc"/></svg><div class="absolute inset-0 flex flex-col items-center justify-center"><span class="text-2xl font-bold mono text-slate-500" id="gVal">—</span></div></div><span class="mt-3 text-[10px] font-bold uppercase tracking-wider text-slate-600" id="gLbl">Sin datos</span></div>
+        <div class="col-span-2 glass rounded-xl p-4"><h4 class="text-[10px] text-slate-400 uppercase font-bold tracking-wider mb-3">Flujo Proyectado</h4><div style="height:185px"><canvas id="cBars"></canvas></div></div>
+    </div>
+    <div class="glass rounded-xl p-4 flex items-center gap-4"><span class="text-[9px] text-slate-400 uppercase font-bold tracking-wider shrink-0">Completitud</span><div class="flex-1 h-2 bg-slate-800 rounded-full overflow-hidden"><div id="qBar" class="h-full bg-rose-500 fill" style="width:0%"></div></div><span id="qTxt" class="text-[11px] mono font-bold text-rose-400 w-10 text-right">0%</span><div id="qDots" class="flex gap-1.5"></div></div>
+</div>
+<!-- TAB: Razones Financieras -->
+<div id="v-ratios" class="flex-1 overflow-y-auto p-5 space-y-4 z-10 hidden">
+    <h3 class="text-sm font-bold text-white flex items-center gap-2 mb-1"><i data-lucide="ratio" class="w-4 h-4 text-sky-400"></i>Razones Financieras</h3>
+    <p class="text-[11px] text-slate-500 mb-3">Métricas calculadas de forma determinista. Las fórmulas se muestran exactamente como el motor las computa.</p>
+    <div class="mb-1"><span class="text-[9px] text-emerald-400 uppercase font-bold tracking-widest flex items-center gap-1.5"><i data-lucide="trending-up" class="w-3 h-3"></i>Rentabilidad</span></div>
+    <div class="grid grid-cols-3 gap-3">
+        <div class="ratio-card"><div class="text-[9px] text-slate-500 uppercase font-bold tracking-wider mb-1">Margen Bruto</div><div class="text-lg font-bold mono text-slate-600" id="r-gm">—</div><div class="formula"><span id="f-gm"></span></div></div>
+        <div class="ratio-card"><div class="text-[9px] text-slate-500 uppercase font-bold tracking-wider mb-1">Margen Neto</div><div class="text-lg font-bold mono text-slate-600" id="r-nm">—</div><div class="formula"><span id="f-nm"></span></div></div>
+        <div class="ratio-card"><div class="text-[9px] text-slate-500 uppercase font-bold tracking-wider mb-1">Utilidad Neta Anual</div><div class="text-lg font-bold mono text-slate-600" id="r-np">—</div><div class="formula"><span id="f-np"></span></div></div>
+    </div>
+    <div class="mt-3 mb-1"><span class="text-[9px] text-sky-400 uppercase font-bold tracking-widest flex items-center gap-1.5"><i data-lucide="target" class="w-3 h-3"></i>Operación e Inversión</span></div>
+    <div class="grid grid-cols-3 gap-3">
+        <div class="ratio-card"><div class="text-[9px] text-slate-500 uppercase font-bold tracking-wider mb-1">ROI</div><div class="text-lg font-bold mono text-slate-600" id="r-roi">—</div><div class="formula"><span id="f-roi"></span></div></div>
+        <div class="ratio-card"><div class="text-[9px] text-slate-500 uppercase font-bold tracking-wider mb-1">Punto de Equilibrio</div><div class="text-lg font-bold mono text-slate-600" id="r-be">—</div><div class="formula"><span id="f-be"></span></div></div>
+        <div class="ratio-card"><div class="text-[9px] text-slate-500 uppercase font-bold tracking-wider mb-1">Meses Break-even</div><div class="text-lg font-bold mono text-slate-600" id="r-bem">—</div><div class="formula"><span id="f-bem"></span></div></div>
+    </div>
+    <div class="grid grid-cols-3 gap-3 mt-3">
+        <div class="ratio-card"><div class="text-[9px] text-slate-500 uppercase font-bold tracking-wider mb-1">Eficiencia Operativa</div><div class="text-lg font-bold mono text-slate-600" id="r-eff">—</div><div class="formula"><span id="f-eff"></span></div></div>
+        <div class="ratio-card"><div class="text-[9px] text-slate-500 uppercase font-bold tracking-wider mb-1">EBITDA</div><div class="text-lg font-bold mono text-slate-600" id="r-ebitda2">—</div><div class="formula"><span id="f-ebitda"></span></div></div>
+        <div class="ratio-card"><div class="text-[9px] text-slate-500 uppercase font-bold tracking-wider mb-1">Valor Empresarial</div><div class="text-lg font-bold mono text-slate-600" id="r-ev2">—</div><div class="formula"><span id="f-ev"></span></div></div>
+    </div>
+    <div class="mt-3 mb-1"><span class="text-[9px] text-rose-400 uppercase font-bold tracking-widest flex items-center gap-1.5"><i data-lucide="shield-alert" class="w-3 h-3"></i>Deuda y Riesgo</span></div>
+    <div class="grid grid-cols-3 gap-3">
+        <div class="ratio-card"><div class="text-[9px] text-slate-500 uppercase font-bold tracking-wider mb-1">DSCR</div><div class="text-lg font-bold mono text-slate-600" id="r-dscr">—</div><div class="formula"><span id="f-dscr"></span></div></div>
+        <div class="ratio-card"><div class="text-[9px] text-slate-500 uppercase font-bold tracking-wider mb-1">Cobertura de Intereses</div><div class="text-lg font-bold mono text-slate-600" id="r-icr">—</div><div class="formula"><span id="f-icr"></span></div></div>
+        <div class="ratio-card"><div class="text-[9px] text-slate-500 uppercase font-bold tracking-wider mb-1">Deuda / Ingresos</div><div class="text-lg font-bold mono text-slate-600" id="r-dti">—</div><div class="formula"><span id="f-dti"></span></div></div>
+    </div>
+    <div class="grid grid-cols-3 gap-3 mt-3">
+        <div class="ratio-card"><div class="text-[9px] text-slate-500 uppercase font-bold tracking-wider mb-1">Apalancamiento</div><div class="text-lg font-bold mono text-slate-600" id="r-lev">—</div><div class="formula"><span id="f-lev"></span></div></div>
+        <div class="ratio-card"><div class="text-[9px] text-slate-500 uppercase font-bold tracking-wider mb-1">Payback</div><div class="text-lg font-bold mono text-slate-600" id="r-pay">—</div><div class="formula"><span id="f-pay"></span></div></div>
+        <div class="ratio-card"><div class="text-[9px] text-slate-500 uppercase font-bold tracking-wider mb-1">Cuota Anual (PMT)</div><div class="text-lg font-bold mono text-slate-600" id="r-pmt">—</div><div class="formula"><span id="f-pmt"></span></div></div>
+    </div>
+    <div class="glass rounded-xl p-4 mt-3"><h4 class="text-[10px] text-slate-400 uppercase font-bold tracking-wider mb-3">Perfil de Salud Financiera</h4><div class="flex items-center justify-center" style="height:280px"><canvas id="cRadar"></canvas></div></div>
+</div>
+<div id="v-back" class="flex-1 overflow-y-auto p-5 space-y-4 z-10 hidden"><div class="grid grid-cols-2 gap-4 flex-1"><div id="pOrch" class="glass rounded-xl p-4 flex flex-col"><div class="flex justify-between items-center mb-3"><h3 class="text-xs font-bold text-indigo-300 flex items-center gap-2 uppercase tracking-wide"><i data-lucide="braces" class="w-3.5 h-3.5"></i>Data Extraction</h3><span id="stO" class="text-[9px] uppercase font-bold text-slate-500 mono">IDLE</span></div><div class="flex-1 bg-[#070b12] rounded-lg p-3 overflow-auto border border-slate-800/60"><pre class="mono text-[10.5px] text-indigo-200/70 leading-relaxed" id="oJ">{}</pre></div></div><div id="pEng" class="glass rounded-xl p-4 flex flex-col"><div class="flex justify-between items-center mb-3"><h3 class="text-xs font-bold text-amber-400 flex items-center gap-2 uppercase tracking-wide"><i data-lucide="calculator" class="w-3.5 h-3.5"></i>Financial Engine</h3><span id="stE" class="text-[9px] uppercase font-bold text-slate-500 mono">IDLE</span></div><div class="flex-1 bg-[#070b12] rounded-lg p-3 overflow-auto border border-slate-800/60"><pre class="mono text-[10.5px] text-amber-200/60 leading-relaxed" id="oM">{}</pre></div></div></div><div class="glass rounded-xl p-4 h-36 flex flex-col"><h3 class="text-[9px] font-bold text-slate-500 uppercase tracking-widest mb-2"><i data-lucide="terminal-square" class="w-3 h-3 inline"></i> Audit</h3><div id="logs" class="flex-1 overflow-y-auto text-[10px] mono text-slate-500 space-y-1"><div>[SYS] Engine v2 ready.</div></div></div></div>
+<div id="v-amor" class="flex-1 overflow-y-auto p-5 z-10 hidden"><div class="glass rounded-xl p-5"><h3 class="text-sm font-bold text-white mb-4 flex items-center gap-2"><i data-lucide="table-2" class="w-4 h-4 text-sky-400"></i>Tabla de Amortización</h3><div id="amTbl" class="text-slate-500 text-sm">Ingresa información de crédito.</div></div></div>
+</div>
+</div>
+
+<!-- ===== MÓDULO: PUNTO DE VENTA ===== -->
+<div id="view-pos" class="flex-1 flex overflow-hidden hidden">
+
+<!-- POS: Panel Izquierdo - Catálogo -->
+<div class="w-[38%] flex flex-col border-r border-slate-800/80 bg-slate-900 relative" style="min-width:340px">
+<div class="px-5 py-3.5 border-b border-slate-800/60 flex items-center justify-between bg-slate-900/95 backdrop-blur-xl">
+    <div class="flex items-center gap-3">
+        <button onclick="goTo('menu')" class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 text-xs font-semibold transition shadow-sm" title="Salir al Menú Principal"><i data-lucide="arrow-left" class="w-4 h-4"></i><span>Salir al Menú</span></button>
+        <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-lg shadow-emerald-600/20"><i data-lucide="shopping-cart" class="text-white w-5 h-5"></i></div>
+        <div><h2 class="text-sm font-bold text-white">Punto de Venta</h2><p class="text-[10px] text-slate-500 mono">Catálogo & Ventas Diarias</p></div>
+    </div>
+    <div class="flex items-center gap-2">
+        <button id="btn-pos-goto-advisor" onclick="goTo('advisor')" class="pos-btn bg-gradient-to-r from-sky-600 to-indigo-600 hover:from-sky-500 hover:to-indigo-500 text-white text-[11px] font-semibold shadow-lg shadow-sky-600/20 px-3 py-1.5"><i data-lucide="brain-circuit" class="w-3.5 h-3.5"></i>Asesor Financiero</button>
+        <button onclick="exportPosDB()" class="text-[10px] text-slate-500 hover:text-emerald-400 flex items-center gap-1 transition bg-slate-800/50 px-2.5 py-1.5 rounded-lg border border-slate-700/50"><i data-lucide="download" class="w-3 h-3"></i>Exportar</button>
+    </div>
+</div>
+
+<!-- POS Tabs -->
+<div class="flex border-b border-slate-800/40 px-4 pt-2 gap-1 overflow-x-auto hide-sb">
+    <button onclick="showPosTab('catalog')" id="pt-catalog" class="tab-on px-3 py-2 rounded-t-lg border border-b-0 border-slate-700/60 text-[10px] font-bold uppercase tracking-wider transition flex items-center gap-1.5 shrink-0"><i data-lucide="package" class="w-3 h-3"></i>Catálogo</button>
+    <button onclick="showPosTab('sell')" id="pt-sell" class="px-3 py-2 rounded-t-lg border border-b-0 border-transparent text-[10px] font-bold uppercase tracking-wider text-slate-500 hover:text-slate-300 transition flex items-center gap-1.5 shrink-0"><i data-lucide="receipt" class="w-3 h-3"></i>Venta</button>
+    <button onclick="showPosTab('expense')" id="pt-expense" class="px-3 py-2 rounded-t-lg border border-b-0 border-transparent text-[10px] font-bold uppercase tracking-wider text-slate-500 hover:text-slate-300 transition flex items-center gap-1.5 shrink-0"><i data-lucide="wallet" class="w-3 h-3"></i>Gastos</button>
+    <button onclick="showPosTab('users')" id="pt-users" class="px-3 py-2 rounded-t-lg border border-b-0 border-transparent text-[10px] font-bold uppercase tracking-wider text-purple-400/80 hover:text-purple-300 transition flex items-center gap-1.5 shrink-0 relative">
+        <i data-lucide="shield-check" class="w-3 h-3 text-purple-400"></i>Usuarios & Control
+        <span id="tab-pending-badge" class="hidden w-2 h-2 rounded-full bg-amber-400 ml-0.5 animate-pulse"></span>
+    </button>
+</div>
+
+<!-- TAB: Catálogo & Inventario -->
+<div id="pv-catalog" class="flex-1 overflow-y-auto p-5 space-y-4">
+    <!-- Agregar Producto con Inventario -->
+    <div id="sec-add-product" class="glass rounded-xl p-4">
+        <h4 class="text-xs font-bold text-emerald-400 uppercase tracking-wider mb-3 flex items-center justify-between">
+            <span class="flex items-center gap-1.5"><i data-lucide="plus-circle" class="w-3.5 h-3.5"></i>Agregar Producto / Servicio</span>
+            <span class="text-[9px] text-emerald-300/70 font-mono">Con Inventario</span>
+        </h4>
+        <div class="space-y-2.5">
+            <input id="cat-name" class="pos-input" placeholder="Nombre (ej: Hamburguesa, Menudo, Corte)">
+            <div class="grid grid-cols-3 gap-2">
+                <div>
+                    <label class="text-[9px] text-slate-400 font-semibold mb-1 block">Precio Venta ($)</label>
+                    <input id="cat-price" type="number" step="0.01" class="pos-input" placeholder="0.00">
+                </div>
+                <div>
+                    <label class="text-[9px] text-slate-400 font-semibold mb-1 block">Costo Prod. ($)</label>
+                    <input id="cat-cost" type="number" step="0.01" class="pos-input" placeholder="0.00">
+                </div>
+                <div>
+                    <label class="text-[9px] text-sky-400 font-semibold mb-1 block">Stock Inicial (u.)</label>
+                    <input id="cat-stock" type="number" min="0" step="1" value="20" class="pos-input border-sky-500/40 text-sky-300 font-bold" placeholder="Cantidad">
+                </div>
+            </div>
+            <button onclick="addProduct()" class="pos-btn bg-emerald-600 hover:bg-emerald-500 text-white w-full justify-center"><i data-lucide="plus" class="w-4 h-4"></i>Agregar al Catálogo e Inventario</button>
+        </div>
+    </div>
+
+    <!-- Reabastecer Inventario Existente -->
+    <div id="sec-restock-product" class="glass rounded-xl p-4 border border-indigo-500/25 bg-gradient-to-br from-indigo-500/8 via-slate-900/40 to-slate-900/60">
+        <h4 class="text-xs font-bold text-indigo-300 uppercase tracking-wider mb-2.5 flex items-center justify-between">
+            <span class="flex items-center gap-1.5"><i data-lucide="boxes" class="w-3.5 h-3.5 text-indigo-400"></i>Reabastecer / Agregar Stock</span>
+            <span class="pill bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 text-[9px]">Entrada</span>
+        </h4>
+        <p class="text-[10px] text-slate-400 mb-2.5">Agrega más unidades a productos que ya tienes dados de alta en tu inventario.</p>
+        <div class="space-y-2">
+            <select id="restock-product" class="pos-input"><option value="">— Seleccionar producto para reabastecer —</option></select>
+            <div class="flex gap-2">
+                <input id="restock-qty" type="number" min="1" step="1" value="10" class="pos-input flex-1" placeholder="Unidades a sumar">
+                <button onclick="addStockToProduct()" class="pos-btn bg-indigo-600 hover:bg-indigo-500 text-white shrink-0 text-xs font-semibold px-4"><i data-lucide="plus-circle" class="w-3.5 h-3.5"></i>Sumar al Stock</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Lista de Catálogo e Inventario -->
+    <div>
+        <div class="flex items-center justify-between mb-3 flex-wrap gap-2">
+            <h4 class="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+                <i data-lucide="package" class="w-3.5 h-3.5 text-slate-400"></i>Mi Catálogo e Inventario (<span id="cat-count">0</span>)
+            </h4>
+            <div class="flex items-center gap-2">
+                <span class="text-[10px] text-slate-500 mono hidden sm:inline">Existencias en tiempo real</span>
+                <button onclick="reloadRefaccionesCatalog()" class="px-2.5 py-1 rounded-lg text-[10px] font-semibold bg-slate-800 hover:bg-slate-700 text-sky-400 border border-slate-700 hover:border-sky-500/50 flex items-center gap-1.5 transition shadow-sm" title="Recargar las 100 refacciones del catálogo con su inventario"><i data-lucide="rotate-ccw" class="w-3 h-3"></i>Recargar 100 Refacciones</button>
+            </div>
+        </div>
+        <div id="cat-list" class="space-y-1.5">
+            <div class="text-slate-600 text-sm text-center py-8">Aún no hay productos registrados.</div>
+        </div>
+    </div>
+</div>
+
+<!-- TAB: Registrar Venta -->
+<div id="pv-sell" class="flex-1 overflow-y-auto p-5 space-y-4 hidden">
+    <div class="glass rounded-xl p-4">
+        <h4 class="text-xs font-bold text-sky-400 uppercase tracking-wider mb-3 flex items-center gap-1.5"><i data-lucide="receipt" class="w-3.5 h-3.5"></i>Nueva Venta</h4>
+        <div class="space-y-2.5">
+            <div>
+                <label class="text-[9px] text-slate-400 font-semibold mb-1 block">Producto / Servicio</label>
+                <select id="sell-product" class="pos-input" onchange="onSellProductChange()"><option value="">— Seleccionar producto —</option></select>
+            </div>
+            <!-- Aviso de Agotado o Alerta de Stock -->
+            <div id="sell-stock-alert" class="hidden"></div>
+            <div>
+                <div class="flex justify-between items-center mb-1">
+                    <label id="sell-qty-label" class="text-[9.5px] text-sky-400 font-bold block">¿Cuántas piezas requieren de este producto?</label>
+                    <span id="sell-stock-badge" class="text-[10.5px] mono text-slate-400 hidden">Disponible: <b id="sell-stock-num" class="text-emerald-400">0</b> u.</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button type="button" onclick="adjustSellQty(-1)" class="w-10 h-10 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white font-bold text-lg flex items-center justify-center transition shrink-0">−</button>
+                    <input id="sell-qty" type="number" min="1" value="1" class="pos-input text-center font-bold mono text-base" placeholder="Piezas a vender">
+                    <button type="button" onclick="adjustSellQty(1)" class="w-10 h-10 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white font-bold text-lg flex items-center justify-center transition shrink-0">+</button>
+                </div>
+            </div>
+            <button id="btn-add-ticket" onclick="addSaleItem()" class="pos-btn bg-sky-600 hover:bg-sky-500 text-white w-full justify-center font-bold shadow-lg shadow-sky-600/20"><i data-lucide="plus" class="w-4 h-4"></i>Agregar a ticket</button>
+        </div>
+    </div>
+    <div>
+        <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Ticket Actual</h4>
+        <div id="ticket-items" class="space-y-1 mb-3"></div>
+        <div class="flex justify-between items-center bg-slate-800/50 rounded-xl p-3 border border-slate-700/40">
+            <span class="text-sm font-bold text-white">Total del Ticket:</span>
+            <span class="text-lg font-bold mono text-emerald-400" id="ticket-total">$0</span>
+        </div>
+
+        <!-- Sección de Opciones de Pago -->
+        <div id="payment-section" class="mt-3 rounded-xl p-3.5 border border-slate-700/70 bg-slate-900/80">
+            <div class="flex items-center justify-between mb-2.5">
+                <label class="text-[10px] font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+                    <i data-lucide="wallet-cards" class="w-3.5 h-3.5 text-sky-400"></i>Forma de Pago
+                </label>
+                <span id="payment-badge-status" class="pill bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 text-[9px] font-semibold">Efectivo 100%</span>
+            </div>
+
+            <!-- Selector de 4 métodos -->
+            <div class="grid grid-cols-2 gap-2 mb-3">
+                <!-- Efectivo -->
+                <button type="button" onclick="setPaymentMethod('cash')" id="pay-btn-cash" class="pay-method-btn active-cash p-2.5 rounded-lg border text-left transition flex items-center gap-2">
+                    <span class="w-7 h-7 rounded-md bg-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0"><i data-lucide="banknote" class="w-4 h-4"></i></span>
+                    <div class="min-w-0">
+                        <div class="text-xs font-bold text-white">Pago en efectivo</div>
+                        <div class="text-[9px] text-slate-400">Caja / Monedas</div>
+                    </div>
+                </button>
+                <!-- Tarjeta -->
+                <button type="button" onclick="setPaymentMethod('card')" id="pay-btn-card" class="pay-method-btn p-2.5 rounded-lg border border-slate-800 bg-slate-800/40 hover:bg-slate-800 text-left transition flex items-center gap-2">
+                    <span class="w-7 h-7 rounded-md bg-sky-500/20 text-sky-400 flex items-center justify-center shrink-0"><i data-lucide="credit-card" class="w-4 h-4"></i></span>
+                    <div class="min-w-0">
+                        <div class="text-xs font-bold text-white">Pago con tarjeta</div>
+                        <div class="text-[9px] text-slate-400">Débito / Crédito</div>
+                    </div>
+                </button>
+                <!-- Transferencia -->
+                <button type="button" onclick="setPaymentMethod('transfer')" id="pay-btn-transfer" class="pay-method-btn p-2.5 rounded-lg border border-slate-800 bg-slate-800/40 hover:bg-slate-800 text-left transition flex items-center gap-2">
+                    <span class="w-7 h-7 rounded-md bg-purple-500/20 text-purple-400 flex items-center justify-center shrink-0"><i data-lucide="smartphone" class="w-4 h-4"></i></span>
+                    <div class="min-w-0">
+                        <div class="text-xs font-bold text-white">Pago por transf.</div>
+                        <div class="text-[9px] text-slate-400">SPEI / Enlace</div>
+                    </div>
+                </button>
+                <!-- Dividir Pago -->
+                <button type="button" onclick="setPaymentMethod('split')" id="pay-btn-split" class="pay-method-btn p-2.5 rounded-lg border border-slate-800 bg-slate-800/40 hover:bg-slate-800 text-left transition flex items-center gap-2">
+                    <span class="w-7 h-7 rounded-md bg-amber-500/20 text-amber-400 flex items-center justify-center shrink-0"><i data-lucide="split" class="w-4 h-4"></i></span>
+                    <div class="min-w-0">
+                        <div class="text-xs font-bold text-white">Dividir pago</div>
+                        <div class="text-[9px] text-slate-400">Varios métodos</div>
+                    </div>
+                </button>
+            </div>
+
+            <!-- Panel Detalle: Efectivo -->
+            <div id="pay-panel-cash" class="space-y-2 p-2.5 rounded-lg bg-slate-950/60 border border-slate-800/80">
+                <div class="flex items-center justify-between">
+                    <label class="text-[10px] text-slate-400">Total a liquidar en efectivo:</label>
+                    <span class="text-xs font-bold mono text-emerald-400" id="cash-total-display">$0</span>
+                </div>
+                <div>
+                    <label class="text-[10px] text-slate-400 mb-1 block">¿Con cuánto paga el cliente? (Cálculo de cambio)</label>
+                    <div class="relative">
+                        <span class="absolute left-2.5 top-2.5 text-xs text-slate-500 font-mono">$</span>
+                        <input id="cash-received" type="number" step="any" min="0" placeholder="0.00" class="pos-input pl-6 text-xs mono py-1.5" oninput="calculateCashChange()">
+                    </div>
+                </div>
+                <div id="cash-change-box" class="hidden p-2 rounded-lg bg-emerald-500/10 border border-emerald-500/25 flex items-center justify-between text-xs">
+                    <span class="text-emerald-300 font-medium flex items-center gap-1"><i data-lucide="coins" class="w-3.5 h-3.5 text-emerald-400"></i>Cambio a entregar:</span>
+                    <span id="cash-change-amount" class="font-bold mono text-emerald-300 text-sm">$0.00</span>
+                </div>
+                <div id="cash-short-box" class="hidden p-2 rounded-lg bg-rose-500/10 border border-rose-500/25 text-xs text-rose-300"></div>
+            </div>
+
+            <!-- Panel Detalle: Tarjeta -->
+            <div id="pay-panel-card" class="space-y-2 p-2.5 rounded-lg bg-slate-950/60 border border-slate-800/80 hidden">
+                <div class="flex items-center justify-between">
+                    <label class="text-[10px] text-slate-400">Total a cobrar con tarjeta:</label>
+                    <span class="text-xs font-bold mono text-sky-400" id="card-total-display">$0</span>
+                </div>
+                <div>
+                    <label class="text-[10px] text-slate-400 mb-1 block">Referencia / Terminal / Últimos 4 dígitos (opcional)</label>
+                    <input id="card-ref" type="text" placeholder="Ej: Visa 4521 / Clip / Terminal Santander" class="pos-input text-xs py-1.5">
+                </div>
+            </div>
+
+            <!-- Panel Detalle: Transferencia -->
+            <div id="pay-panel-transfer" class="space-y-2 p-2.5 rounded-lg bg-slate-950/60 border border-slate-800/80 hidden">
+                <div class="flex items-center justify-between">
+                    <label class="text-[10px] text-slate-400">Total por transferencia SPEI:</label>
+                    <span class="text-xs font-bold mono text-purple-400" id="transfer-total-display">$0</span>
+                </div>
+                <div>
+                    <label class="text-[10px] text-slate-400 mb-1 block">Folio / Clave de rastreo o Banco (opcional)</label>
+                    <input id="transfer-ref" type="text" placeholder="Ej: BBVA Folio 849203 / SPEI" class="pos-input text-xs py-1.5">
+                </div>
+            </div>
+
+            <!-- Panel Detalle: Dividir Pago (Split) -->
+            <div id="pay-panel-split" class="space-y-2.5 p-3 rounded-lg bg-slate-950/70 border border-amber-500/30 hidden">
+                <div class="flex items-center justify-between border-b border-slate-800/80 pb-2">
+                    <div>
+                        <span class="text-[10px] uppercase font-bold text-amber-400 tracking-wider block">Dividir Cuenta Total</span>
+                        <span class="text-[9.5px] text-slate-400">Indica la proporción de cada método</span>
+                    </div>
+                    <div class="text-right">
+                        <span class="text-[9.5px] text-slate-400 block">Total a cubrir:</span>
+                        <span class="text-xs font-bold mono text-white" id="split-total-req">$0</span>
+                    </div>
+                </div>
+
+                <!-- Barra de distribución visual de pago -->
+                <div>
+                    <div class="flex justify-between text-[9px] text-slate-400 mb-1 font-mono">
+                        <span id="split-pct-cash">Efectivo 0%</span>
+                        <span id="split-pct-card">Tarjeta 0%</span>
+                        <span id="split-pct-transfer">Transf. 0%</span>
+                    </div>
+                    <div class="w-full h-2 rounded-full bg-slate-800 overflow-hidden flex">
+                        <div id="split-bar-cash" class="h-full bg-emerald-500 transition-all duration-300" style="width:0%"></div>
+                        <div id="split-bar-card" class="h-full bg-sky-500 transition-all duration-300" style="width:0%"></div>
+                        <div id="split-bar-transfer" class="h-full bg-purple-500 transition-all duration-300" style="width:0%"></div>
+                    </div>
+                </div>
+
+                <!-- Botones rápidos de división -->
+                <div class="flex gap-1.5 flex-wrap">
+                    <button type="button" onclick="splitEvenly(['cash','card'])" class="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-[9.5px] text-slate-300 border border-slate-700 transition">50% Efec / 50% Tarj</button>
+                    <button type="button" onclick="splitEvenly(['cash','transfer'])" class="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-[9.5px] text-slate-300 border border-slate-700 transition">50% Efec / 50% Transf</button>
+                    <button type="button" onclick="splitEvenly(['cash','card','transfer'])" class="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-[9.5px] text-slate-300 border border-slate-700 transition">1/3 Cada Uno</button>
+                </div>
+
+                <!-- Inputs por método -->
+                <div class="space-y-1.5">
+                    <!-- Efectivo en Split -->
+                    <div class="flex items-center gap-2">
+                        <div class="w-20 text-[10.5px] font-medium text-emerald-400 flex items-center gap-1 shrink-0">
+                            <i data-lucide="banknote" class="w-3 h-3"></i>Efectivo:
+                        </div>
+                        <div class="relative flex-1">
+                            <span class="absolute left-2.5 top-2 text-[11px] text-slate-500 font-mono">$</span>
+                            <input id="split-amt-cash" type="number" step="any" min="0" placeholder="0.00" class="pos-input pl-6 py-1 text-xs mono" oninput="onSplitAmountChanged()">
+                        </div>
+                        <button type="button" onclick="fillSplitRemainder('cash')" class="px-2 py-1 rounded bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 text-[9.5px] font-semibold border border-emerald-500/30 shrink-0" title="Asignar restante a efectivo">Resto</button>
+                    </div>
+
+                    <!-- Tarjeta en Split -->
+                    <div class="flex items-center gap-2">
+                        <div class="w-20 text-[10.5px] font-medium text-sky-400 flex items-center gap-1 shrink-0">
+                            <i data-lucide="credit-card" class="w-3 h-3"></i>Tarjeta:
+                        </div>
+                        <div class="relative flex-1">
+                            <span class="absolute left-2.5 top-2 text-[11px] text-slate-500 font-mono">$</span>
+                            <input id="split-amt-card" type="number" step="any" min="0" placeholder="0.00" class="pos-input pl-6 py-1 text-xs mono" oninput="onSplitAmountChanged()">
+                        </div>
+                        <button type="button" onclick="fillSplitRemainder('card')" class="px-2 py-1 rounded bg-sky-500/15 hover:bg-sky-500/25 text-sky-300 text-[9.5px] font-semibold border border-sky-500/30 shrink-0" title="Asignar restante a tarjeta">Resto</button>
+                    </div>
+
+                    <!-- Transferencia en Split -->
+                    <div class="flex items-center gap-2">
+                        <div class="w-20 text-[10.5px] font-medium text-purple-400 flex items-center gap-1 shrink-0">
+                            <i data-lucide="smartphone" class="w-3 h-3"></i>Transf.:
+                        </div>
+                        <div class="relative flex-1">
+                            <span class="absolute left-2.5 top-2 text-[11px] text-slate-500 font-mono">$</span>
+                            <input id="split-amt-transfer" type="number" step="any" min="0" placeholder="0.00" class="pos-input pl-6 py-1 text-xs mono" oninput="onSplitAmountChanged()">
+                        </div>
+                        <button type="button" onclick="fillSplitRemainder('transfer')" class="px-2 py-1 rounded bg-purple-500/15 hover:bg-purple-500/25 text-purple-300 text-[9.5px] font-semibold border border-purple-500/30 shrink-0" title="Asignar restante a transferencia">Resto</button>
+                    </div>
+                </div>
+
+                <!-- Resumen de Balance del Split -->
+                <div id="split-status-box" class="p-2 rounded-lg bg-slate-900 border border-slate-800 flex items-center justify-between text-xs">
+                    <div>
+                        <span class="text-slate-400 text-[9.5px] block">Asignado: <b id="split-sum-display" class="text-white mono">$0.00</b></span>
+                    </div>
+                    <div class="text-right">
+                        <span id="split-diff-label" class="text-[9.5px] text-slate-400 block">Restante:</span>
+                        <span id="split-diff-amount" class="font-bold mono text-amber-400">$0.00</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <button onclick="closeSale()" class="pos-btn bg-emerald-600 hover:bg-emerald-500 text-white w-full justify-center mt-3"><i data-lucide="check-circle" class="w-4 h-4"></i>Cobrar y Cerrar Venta</button>
+    </div>
+</div>
+
+<!-- TAB: Gastos -->
+<div id="pv-expense" class="flex-1 overflow-y-auto p-5 space-y-4 hidden">
+    <div class="glass rounded-xl p-4">
+        <h4 class="text-xs font-bold text-rose-400 uppercase tracking-wider mb-3 flex items-center gap-1.5"><i data-lucide="wallet" class="w-3.5 h-3.5"></i>Registrar Gasto</h4>
+        <div class="space-y-2.5">
+            <input id="exp-desc" class="pos-input" placeholder="Descripción (ej: Renta, Luz, Insumos)">
+            <input id="exp-amount" type="number" step="0.01" class="pos-input" placeholder="Monto ($)">
+            <select id="exp-cat" class="pos-input"><option value="fijo">Gasto Fijo</option><option value="variable">Gasto Variable</option><option value="otro">Otro</option></select>
+            <button onclick="addExpense()" class="pos-btn bg-rose-600 hover:bg-rose-500 text-white w-full justify-center"><i data-lucide="plus" class="w-4 h-4"></i>Registrar Gasto</button>
+        </div>
+    </div>
+    <div>
+        <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Gastos de Hoy</h4>
+        <div id="exp-list" class="space-y-1.5">
+            <div class="text-slate-600 text-sm text-center py-6">Sin gastos registrados hoy.</div>
+        </div>
+    </div>
+</div>
+
+<!-- TAB: Usuarios, Cancelaciones & Auditoría -->
+<div id="pv-users" class="flex-1 overflow-y-auto p-5 space-y-4 hidden">
+    <!-- Sub-nav interna de Seguridad -->
+    <div class="flex gap-1.5 border-b border-slate-800/80 pb-2">
+        <button onclick="showUsersSubSection('users')" id="btn-sub-users" class="px-3 py-1.5 rounded-lg bg-purple-500/20 text-purple-300 border border-purple-500/40 text-[10.5px] font-bold transition flex items-center gap-1.5">
+            <i data-lucide="users" class="w-3 h-3"></i>Usuarios
+        </button>
+        <button onclick="showUsersSubSection('requests')" id="btn-sub-requests" class="px-3 py-1.5 rounded-lg bg-slate-800 text-slate-400 border border-slate-700/50 text-[10.5px] font-bold hover:text-white transition flex items-center gap-1.5 relative">
+            <i data-lucide="inbox" class="w-3 h-3 text-amber-400"></i>Cancelaciones
+            <span id="badge-pending-count" class="hidden px-1.5 py-0.2 rounded-full bg-amber-500 text-slate-950 text-[9px] font-extrabold ml-1">0</span>
+        </button>
+        <button onclick="showUsersSubSection('audit')" id="btn-sub-audit" class="px-3 py-1.5 rounded-lg bg-slate-800 text-slate-400 border border-slate-700/50 text-[10.5px] font-bold hover:text-white transition flex items-center gap-1.5">
+            <i data-lucide="scroll-text" class="w-3 h-3 text-sky-400"></i>Bitácora
+        </button>
+    </div>
+
+    <!-- SUBSECCIÓN 1: Gestión de Usuarios (Solo Admin) -->
+    <div id="sec-users-mgmt" class="space-y-4">
+        <!-- Formulario Crear Usuario -->
+        <div id="card-create-user" class="glass rounded-xl p-4 border border-purple-500/25">
+            <h4 class="text-xs font-bold text-purple-300 uppercase tracking-wider mb-2.5 flex items-center gap-1.5">
+                <i data-lucide="user-plus" class="w-3.5 h-3.5 text-purple-400"></i>Crear Nuevo Usuario
+            </h4>
+            <form onsubmit="handleCreateUserForm(event)" class="space-y-2.5">
+                <div class="grid grid-cols-2 gap-2">
+                    <input id="new-user-name" class="pos-input" placeholder="Nombre completo" required>
+                    <input id="new-user-username" class="pos-input" placeholder="Nombre de usuario" required>
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                    <input id="new-user-password" type="password" class="pos-input" placeholder="Contraseña" required>
+                    <select id="new-user-role" class="pos-input">
+                        <option value="cajero">Cajero (Ventas Exclusivas)</option>
+                        <option value="supervisor">Supervisor (Operación)</option>
+                        <option value="analista">Analista (Estadísticas)</option>
+                        <option value="almacen">Almacén (Catálogo & Stock)</option>
+                        <option value="admin">Administrador (Total)</option>
+                    </select>
+                </div>
+                <button type="submit" class="pos-btn bg-purple-600 hover:bg-purple-500 text-white w-full justify-center">
+                    <i data-lucide="plus" class="w-4 h-4"></i>Registrar Cuenta
+                </button>
+            </form>
+        </div>
+
+        <!-- Lista de Usuarios -->
+        <div>
+            <div class="flex items-center justify-between mb-2">
+                <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider">Cuentas Registradas</h4>
+                <span id="users-count-badge" class="pill bg-slate-800 text-slate-400 border border-slate-700 text-[9px] mono">0 usuarios</span>
+            </div>
+            <div id="users-table-list" class="space-y-2"></div>
+        </div>
+    </div>
+
+    <!-- SUBSECCIÓN 2: Bandeja de Solicitudes de Cancelación -->
+    <div id="sec-requests-mgmt" class="space-y-3 hidden">
+        <div class="glass rounded-xl p-4 border border-amber-500/25">
+            <div class="flex items-center justify-between mb-1">
+                <h4 class="text-xs font-bold text-amber-300 uppercase tracking-wider flex items-center gap-1.5">
+                    <i data-lucide="clock" class="w-3.5 h-3.5 text-amber-400"></i>Autorización de Cancelaciones
+                </h4>
+                <span class="text-[10px] text-slate-400">Supervisor / Admin</span>
+            </div>
+            <p class="text-[11px] text-slate-400">
+                Revisa las solicitudes enviadas por cajeros. La aprobación cancela la venta y reintegra el stock al catálogo exactamente una vez.
+            </p>
+        </div>
+        <div id="requests-table-list" class="space-y-2"></div>
+    </div>
+
+    <!-- SUBSECCIÓN 3: Bitácora de Auditoría -->
+    <div id="sec-audit-mgmt" class="space-y-3 hidden">
+        <div class="flex items-center justify-between">
+            <h4 class="text-xs font-bold text-sky-400 uppercase tracking-wider flex items-center gap-1.5">
+                <i data-lucide="shield-check" class="w-3.5 h-3.5 text-sky-400"></i>Eventos de Seguridad & Operación
+            </h4>
+            <button onclick="clearAuditLog()" id="btn-clear-audit" class="text-[10px] text-slate-500 hover:text-rose-400 transition flex items-center gap-1">
+                <i data-lucide="trash" class="w-3 h-3"></i>Limpiar
+            </button>
+        </div>
+        <div id="audit-log-list" class="space-y-1.5 max-h-[460px] overflow-y-auto"></div>
+    </div>
+</div>
+
+<!-- PANEL LATERAL ESPECIALIZADO: ANALISTA -->
+<div id="pv-analista-info" class="flex-1 overflow-y-auto p-5 space-y-4 hidden">
+    <div class="glass rounded-xl p-5 border border-sky-500/30 bg-gradient-to-br from-sky-500/10 via-slate-900/60 to-slate-900/80">
+        <div class="w-12 h-12 rounded-xl bg-sky-500/20 text-sky-400 border border-sky-500/30 flex items-center justify-center mb-3">
+            <i data-lucide="line-chart" class="w-6 h-6"></i>
+        </div>
+        <h3 class="text-base font-bold text-white mb-1">Panel de Análisis y Estadísticas</h3>
+        <p class="text-xs text-slate-300 leading-relaxed mb-4">
+            Sesión configurada para <b>Analista</b>. Tienes acceso exclusivo a métricas agregadas, correlaciones entre productos y horas pico de venta.
+        </p>
+        <div class="p-3 rounded-lg bg-slate-900/80 border border-slate-800 text-[11px] text-slate-400 space-y-2">
+            <div class="flex items-center gap-1.5 text-sky-400 font-semibold"><i data-lucide="check-circle" class="w-3.5 h-3.5"></i> Indicadores disponibles a la derecha:</div>
+            <div>• <b>Top #1:</b> Producto con mayor rotación e ingresos generados</div>
+            <div>• <b>Horas Pico:</b> Intervalos de mayor flujo de clientes</div>
+            <div>• <b>Ranking de Ventas:</b> Participación de cada producto en ventas</div>
+            <div>• <b>Correlación de Pearson:</b> Afinidad cruzada entre artículos</div>
+        </div>
+    </div>
+</div>
+</div>
+
+<!-- POS: Panel Derecho - Resumen & Estadísticas -->
+<div class="flex-1 bg-[#020617] flex flex-col relative overflow-hidden">
+<div class="absolute inset-0 opacity-[0.012] pointer-events-none" style="background-image:radial-gradient(#94a3b8 1px,transparent 1px);background-size:30px 30px"></div>
+
+<!-- Subtab Bar: Resumen Diario vs Estadísticas -->
+<div class="px-5 pt-3 pb-0 flex items-center justify-between border-b border-slate-800/60 bg-slate-950/60 backdrop-blur-md z-10">
+    <div class="flex gap-1.5" id="pos-subtab-bar">
+        <button onclick="showPosViewMode('today')" id="btn-pos-today" class="tab-on px-4 py-2 rounded-t-lg border border-b-0 border-slate-700/60 text-[10.5px] font-bold uppercase tracking-wider transition flex items-center gap-1.5">
+            <i data-lucide="calendar" class="w-3.5 h-3.5 text-emerald-400"></i>Resumen de Hoy
+        </button>
+        <button onclick="showPosViewMode('stats')" id="btn-pos-stats" class="px-4 py-2 rounded-t-lg border border-b-0 border-transparent text-[10.5px] font-bold uppercase tracking-wider text-slate-500 hover:text-slate-300 transition flex items-center gap-1.5">
+            <i data-lucide="bar-chart-2" class="w-3.5 h-3.5 text-sky-400"></i>Estadísticas & Correlación
+        </button>
+        <button onclick="showPosViewMode('almacen')" id="btn-pos-almacen" class="px-4 py-2 rounded-t-lg border border-b-0 border-transparent text-[10.5px] font-bold uppercase tracking-wider text-teal-400 hover:text-teal-300 transition flex items-center gap-1.5 hidden">
+            <i data-lucide="boxes" class="w-3.5 h-3.5 text-teal-400"></i>Inventario & Almacén
+        </button>
+    </div>
+    <div class="flex items-center gap-2 pb-2">
+        <button onclick="syncAndGoToAdvisor()" class="pos-btn bg-gradient-to-r from-sky-600 to-indigo-600 hover:from-sky-500 hover:to-indigo-500 text-white text-[11px] font-semibold py-1.5 px-3 shadow-lg shadow-sky-600/20">
+            <i data-lucide="zap" class="w-3.5 h-3.5"></i>Sincronizar con Asesor
+        </button>
+    </div>
+</div>
+
+<!-- VISTA 1: Resumen del Día -->
+<div id="pos-panel-today" class="p-5 z-10 flex flex-col gap-4 overflow-y-auto flex-1">
+    <h3 class="text-lg font-bold text-white flex items-center gap-2"><i data-lucide="calendar" class="w-5 h-5 text-emerald-400"></i>Resumen del Día — <span class="text-slate-400 text-sm mono" id="pos-date"></span></h3>
+
+    <!-- CONTROLES MULTI-REGIÓN Y FISCALES DINÁMICOS -->
+    <div class="flex items-center gap-2 bg-slate-900/60 p-2.5 rounded-xl border border-slate-800 flex-wrap text-xs">
+        <div class="flex items-center gap-1.5 text-slate-300 font-semibold">
+            <i data-lucide="map-pin" class="w-3.5 h-3.5 text-sky-400"></i>Zona Fiscal:
+        </div>
+        <select id="pos-tax-zone" onchange="onTaxZoneChange(this.value)" class="bg-slate-950 border border-slate-700 rounded-lg px-2 py-1 text-slate-200 outline-none text-xs cursor-pointer focus:border-sky-400">
+            <option value="16">Interior (IVA 16%)</option>
+            <option value="8">Franja Fronteriza Norte/Sur (IVA 8%)</option>
+            <option value="0">Tasa Cero / Exento (IVA 0%)</option>
+        </select>
+        <div class="flex items-center gap-1.5 text-slate-300 font-semibold ml-auto">
+            <i data-lucide="clock" class="w-3.5 h-3.5 text-amber-400"></i>Huso Horario:
+        </div>
+        <select id="pos-tz-select" onchange="onTimezoneChange(this.value)" class="bg-slate-950 border border-slate-700 rounded-lg px-2 py-1 text-slate-200 outline-none text-xs cursor-pointer focus:border-amber-400">
+            <option value="America/Mexico_City">Tiempo del Centro (CDMX/MTY/GDL - UTC-6)</option>
+            <option value="America/Tijuana">Noroeste (Tijuana/Mexicali - UTC-8)</option>
+            <option value="America/Hermosillo">Pacífico (Sonora - UTC-7)</option>
+            <option value="America/Cancun">Sureste (Cancún/Q.Roo - UTC-5)</option>
+        </select>
+    </div>
+
+    <!-- BARRA DE CONTROL DE TURNOS Y ARQUEOS (CORTES X Y Z) -->
+    <div class="flex items-center justify-between p-3 rounded-xl bg-slate-900/80 border border-slate-800 flex-wrap gap-2">
+        <div class="flex items-center gap-2.5">
+            <span id="shift-status-pill" class="pill bg-slate-800 text-slate-400 border border-slate-700 text-xs font-semibold flex items-center gap-1.5">
+                <span class="w-2 h-2 rounded-full bg-slate-500"></span>Sin Turno Activo
+            </span>
+            <span id="shift-info-text" class="text-xs text-slate-400 mono">Abre turno con fondo de caja para registrar ventas</span>
+        </div>
+        <div class="flex items-center gap-2">
+            <button id="btn-shift-open" onclick="promptOpenShift()" class="pos-btn bg-emerald-600 hover:bg-emerald-500 text-white text-xs py-1.5 px-3 flex items-center gap-1.5">
+                <i data-lucide="play" class="w-3.5 h-3.5"></i>Abrir Turno
+            </button>
+            <button id="btn-shift-cutx" onclick="showCutXModal()" class="pos-btn bg-sky-600 hover:bg-sky-500 text-white text-xs py-1.5 px-3 flex items-center gap-1.5 hidden">
+                <i data-lucide="file-text" class="w-3.5 h-3.5"></i>Corte X
+            </button>
+            <button id="btn-shift-cutz" onclick="showCutZModal()" class="pos-btn bg-amber-600 hover:bg-amber-500 text-white text-xs py-1.5 px-3 flex items-center gap-1.5 hidden">
+                <i data-lucide="check-square" class="w-3.5 h-3.5"></i>Corte Z (Cierre)
+            </button>
+        </div>
+    </div>
+    <div class="grid grid-cols-4 gap-3">
+        <div class="card"><div class="text-[9px] text-slate-500 uppercase font-bold tracking-wider mb-1">Ventas Hoy</div><div class="text-xl font-bold mono text-emerald-400" id="pos-sales-total">$0</div></div>
+        <div class="card" id="card-pos-cogs"><div class="text-[9px] text-slate-500 uppercase font-bold tracking-wider mb-1">Costo Prod.</div><div class="text-xl font-bold mono text-rose-400" id="pos-cogs">$0</div></div>
+        <div class="card"><div class="text-[9px] text-slate-500 uppercase font-bold tracking-wider mb-1">Gastos Hoy</div><div class="text-xl font-bold mono text-amber-400" id="pos-exp-total">$0</div></div>
+        <div class="card" id="card-pos-profit"><div class="text-[9px] text-slate-500 uppercase font-bold tracking-wider mb-1">Utilidad Neta</div><div class="text-xl font-bold mono text-slate-600" id="pos-profit">$0</div></div>
+    </div>
+
+    <!-- Desglose por Método de Pago de Hoy -->
+    <div class="grid grid-cols-3 gap-2.5">
+        <div class="p-2.5 rounded-xl bg-slate-900/60 border border-emerald-500/25 flex items-center justify-between">
+            <div class="flex items-center gap-2">
+                <span class="w-7 h-7 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0"><i data-lucide="banknote" class="w-4 h-4"></i></span>
+                <div>
+                    <div class="text-[9px] text-slate-400 uppercase font-bold">Efectivo Hoy</div>
+                    <div class="text-xs font-bold mono text-emerald-300" id="pos-pay-cash">$0</div>
+                </div>
+            </div>
+            <span class="text-[10px] text-slate-500 mono" id="pos-pay-cash-pct">0%</span>
+        </div>
+        <div class="p-2.5 rounded-xl bg-slate-900/60 border border-sky-500/25 flex items-center justify-between">
+            <div class="flex items-center gap-2">
+                <span class="w-7 h-7 rounded-lg bg-sky-500/20 text-sky-400 flex items-center justify-center shrink-0"><i data-lucide="credit-card" class="w-4 h-4"></i></span>
+                <div>
+                    <div class="text-[9px] text-slate-400 uppercase font-bold">Tarjeta Hoy</div>
+                    <div class="text-xs font-bold mono text-sky-300" id="pos-pay-card">$0</div>
+                </div>
+            </div>
+            <span class="text-[10px] text-slate-500 mono" id="pos-pay-card-pct">0%</span>
+        </div>
+        <div class="p-2.5 rounded-xl bg-slate-900/60 border border-purple-500/25 flex items-center justify-between">
+            <div class="flex items-center gap-2">
+                <span class="w-7 h-7 rounded-lg bg-purple-500/20 text-purple-400 flex items-center justify-center shrink-0"><i data-lucide="smartphone" class="w-4 h-4"></i></span>
+                <div>
+                    <div class="text-[9px] text-slate-400 uppercase font-bold">Transferencia Hoy</div>
+                    <div class="text-xs font-bold mono text-purple-300" id="pos-pay-transfer">$0</div>
+                </div>
+            </div>
+            <span class="text-[10px] text-slate-500 mono" id="pos-pay-transfer-pct">0%</span>
+        </div>
+    </div>
+    <!-- Gráfica de hoy -->
+    <div class="glass rounded-xl p-4"><h4 class="text-[10px] text-slate-400 uppercase font-bold tracking-wider mb-3">Desglose de Ventas por Producto (Hoy)</h4><div style="height:220px"><canvas id="cPosBars"></canvas></div></div>
+    <!-- Historial de ventas de hoy -->
+    <div class="glass rounded-xl p-4 flex-1">
+        <h4 class="text-[10px] text-slate-400 uppercase font-bold tracking-wider mb-3 flex items-center gap-1.5"><i data-lucide="list" class="w-3 h-3"></i>Historial de Ventas del Día</h4>
+        <div id="pos-history" class="space-y-1.5 overflow-y-auto max-h-[300px]">
+            <div class="text-slate-600 text-sm text-center py-6">No hay ventas registradas hoy.</div>
+        </div>
+    </div>
+</div>
+
+<!-- VISTA 2: Estadísticas & Análisis (Histórico Global) -->
+<div id="pos-panel-stats" class="p-5 z-10 flex flex-col gap-4 overflow-y-auto flex-1 hidden">
+    <!-- Estado vacío si no hay ventas registradas -->
+    <div id="stats-empty" class="glass rounded-2xl p-12 text-center my-auto">
+        <div class="w-16 h-16 rounded-2xl bg-slate-800/80 border border-slate-700/60 flex items-center justify-center mx-auto mb-4 text-slate-500">
+            <i data-lucide="bar-chart-3" class="w-8 h-8"></i>
+        </div>
+        <h4 class="text-base font-bold text-white mb-2">Sección de Estadísticas en Espera</h4>
+        <p class="text-xs text-slate-400 max-w-md mx-auto leading-relaxed">
+            Esta sección comenzará a funcionar automáticamente en cuanto registres productos en el catálogo y realices tus primeras ventas en el punto de venta.
+        </p>
+    </div>
+
+    <!-- Contenido estadístico si existen ventas -->
+    <div id="stats-content" class="space-y-4 hidden">
+        <!-- KPIs Principales -->
+        <div class="grid grid-cols-3 gap-3">
+            <!-- Producto Más Vendido (Hero) -->
+            <div class="glass rounded-xl p-4 border border-amber-500/30 bg-gradient-to-br from-amber-500/10 via-slate-900/60 to-slate-900/80 flex flex-col justify-between">
+                <div class="flex items-center justify-between mb-2">
+                    <span class="text-[9px] uppercase font-bold tracking-wider text-amber-400 flex items-center gap-1.5"><i data-lucide="crown" class="w-4 h-4 text-amber-400"></i>Producto Más Vendido</span>
+                    <span class="pill bg-amber-500/20 text-amber-300 border border-amber-500/30 text-[9px] font-bold">Top #1</span>
+                </div>
+                <div>
+                    <div id="stat-top-prod-name" class="text-lg font-bold text-white truncate mb-0.5">—</div>
+                    <div class="text-xs text-amber-200/80 font-mono" id="stat-top-prod-sub">—</div>
+                </div>
+                <div class="text-[10px] text-slate-400 mt-2.5 pt-2 border-t border-slate-800/80 flex justify-between items-center">
+                    <span>Participación en ventas:</span>
+                    <b id="stat-top-prod-share" class="text-emerald-400 font-mono text-[11px]">0%</b>
+                </div>
+            </div>
+
+            <!-- Horas con Mayor Flujo de Ventas -->
+            <div class="glass rounded-xl p-4 border border-sky-500/30 bg-gradient-to-br from-sky-500/10 via-slate-900/60 to-slate-900/80 flex flex-col justify-between">
+                <div class="flex items-center justify-between mb-2">
+                    <span class="text-[9px] uppercase font-bold tracking-wider text-sky-400 flex items-center gap-1.5"><i data-lucide="clock" class="w-4 h-4 text-sky-400"></i>Hora con Más Flujo</span>
+                    <span class="pill bg-sky-500/20 text-sky-300 border border-sky-500/30 text-[9px] font-bold">Horario Pico</span>
+                </div>
+                <div>
+                    <div id="stat-peak-hour" class="text-lg font-bold text-white mb-0.5">—</div>
+                    <div class="text-xs text-sky-200/80 font-mono" id="stat-peak-hour-sub">—</div>
+                </div>
+                <div class="text-[10px] text-slate-400 mt-2.5 pt-2 border-t border-slate-800/80 flex justify-between items-center">
+                    <span>Ventas en horario pico:</span>
+                    <b id="stat-peak-hour-pct" class="text-sky-400 font-mono text-[11px]">0%</b>
+                </div>
+            </div>
+
+            <!-- Ventas Totales Acumuladas -->
+            <div class="glass rounded-xl p-4 border border-emerald-500/30 bg-gradient-to-br from-emerald-500/10 via-slate-900/60 to-slate-900/80 flex flex-col justify-between">
+                <div class="flex items-center justify-between mb-2">
+                    <span class="text-[9px] uppercase font-bold tracking-wider text-emerald-400 flex items-center gap-1.5"><i data-lucide="trending-up" class="w-4 h-4 text-emerald-400"></i>Ventas Acumuladas</span>
+                    <span class="pill bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[9px] font-bold">Histórico</span>
+                </div>
+                <div>
+                    <div id="stat-total-rev" class="text-lg font-bold mono text-emerald-400 mb-0.5">$0</div>
+                    <div class="text-xs text-slate-400" id="stat-total-tickets">0 tickets registrados</div>
+                </div>
+                <div class="text-[10px] text-slate-400 mt-2.5 pt-2 border-t border-slate-800/80 flex justify-between items-center">
+                    <span>Ticket promedio:</span>
+                    <b id="stat-avg-ticket" class="text-emerald-300 font-mono text-[11px]">$0</b>
+                </div>
+            </div>
+        </div>
+
+        <!-- Fila 2: Ranking de Productos Más Vendidos + Horas con más Flujo -->
+        <div class="grid grid-cols-2 gap-4">
+            <!-- Ranking de productos más vendidos -->
+            <div class="glass rounded-xl p-4 flex flex-col">
+                <div class="flex items-center justify-between mb-2.5">
+                    <h4 class="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-1.5">
+                        <i data-lucide="award" class="w-4 h-4 text-amber-400"></i>Ranking: Productos Más Vendidos
+                    </h4>
+                    <span class="text-[10px] text-slate-500 mono" id="stat-prod-count">0 productos</span>
+                </div>
+                <p class="text-[10px] text-slate-400 mb-3">Ordenados de mayor a menor volumen con sus ingresos y margen.</p>
+                <div id="stat-ranking-list" class="space-y-2 overflow-y-auto max-h-[250px] pr-1"></div>
+            </div>
+
+            <!-- Gráfico de Horas con más Flujo de Venta -->
+            <div class="glass rounded-xl p-4 flex flex-col">
+                <div class="flex items-center justify-between mb-2.5">
+                    <h4 class="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-1.5">
+                        <i data-lucide="activity" class="w-4 h-4 text-sky-400"></i>Flujo de Ventas por Hora
+                    </h4>
+                    <span class="text-[10px] text-sky-400 font-mono">Horarios</span>
+                </div>
+                <p class="text-[10px] text-slate-400 mb-2">Concentración de ventas a lo largo del día para planear personal e inventario.</p>
+                <div style="height:210px" class="relative">
+                    <canvas id="cPosHourly"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Fila 3: Correlación entre Productos -->
+        <div class="glass rounded-xl p-4">
+            <div class="flex items-center justify-between mb-2.5">
+                <div class="flex items-center gap-2">
+                    <div class="w-8 h-8 rounded-lg bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center text-indigo-400 shadow-sm"><i data-lucide="git-merge" class="w-4 h-4"></i></div>
+                    <div>
+                        <h4 class="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-1.5">Correlación entre la Venta de Productos</h4>
+                        <p class="text-[10px] text-slate-400">Evalúa si la venta de un producto afecta a otro: <b class="text-rose-400">Sustitutos / Canibalización</b> (el aumento de uno reduce el otro) o <b class="text-emerald-400">Complementarios</b> (se venden juntos en combo).</p>
+                    </div>
+                </div>
+                <span class="pill bg-indigo-500/15 text-indigo-300 border border-indigo-500/30 text-[9px] mono">Pearson r</span>
+            </div>
+            <!-- Insights explicativos de la correlación -->
+            <div id="correlation-insights" class="mb-3 space-y-2"></div>
+            <!-- Tabla detallada de correlaciones entre pares -->
+            <div id="correlation-table" class="space-y-1.5 max-h-[220px] overflow-y-auto pr-1"></div>
+        </div>
+    </div>
+
+    <!-- VISTA 3: Panel de Control de Almacén (Inventario & Stock) -->
+    <div id="pos-panel-almacen" class="p-5 z-10 flex flex-col gap-4 overflow-y-auto flex-1 hidden">
+        <div class="flex items-center justify-between">
+            <div>
+                <h3 class="text-lg font-bold text-white flex items-center gap-2">
+                    <i data-lucide="boxes" class="w-5 h-5 text-teal-400"></i>Control General de Almacén
+                </h3>
+                <p class="text-xs text-slate-400">Monitoreo de existencias, productos críticos y alertas de inventario.</p>
+            </div>
+            <button onclick="renderAlmacenDashboard()" class="pos-btn bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs py-1.5 px-3">
+                <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>Actualizar
+            </button>
+        </div>
+
+        <!-- KPI Cards de Almacén -->
+        <div class="grid grid-cols-4 gap-3">
+            <div class="card border-teal-500/20 bg-teal-500/5">
+                <div class="text-[9px] text-teal-400 uppercase font-bold tracking-wider mb-1 flex items-center justify-center gap-1">
+                    <i data-lucide="package" class="w-3 h-3"></i>Catálogo
+                </div>
+                <div class="text-xl font-bold mono text-white" id="alm-total-prods">0</div>
+                <div class="text-[10px] text-slate-500 mt-0.5">referencias dadas de alta</div>
+            </div>
+            <div class="card border-sky-500/20 bg-sky-500/5">
+                <div class="text-[9px] text-sky-400 uppercase font-bold tracking-wider mb-1 flex items-center justify-center gap-1">
+                    <i data-lucide="layers" class="w-3 h-3"></i>Total Unidades
+                </div>
+                <div class="text-xl font-bold mono text-sky-300" id="alm-total-units">0</div>
+                <div class="text-[10px] text-slate-500 mt-0.5">piezas físicas en stock</div>
+            </div>
+            <div class="card border-amber-500/20 bg-amber-500/5">
+                <div class="text-[9px] text-amber-400 uppercase font-bold tracking-wider mb-1 flex items-center justify-center gap-1">
+                    <i data-lucide="alert-triangle" class="w-3 h-3"></i>Stock Bajo
+                </div>
+                <div class="text-xl font-bold mono text-amber-400" id="alm-low-stock">0</div>
+                <div class="text-[10px] text-slate-500 mt-0.5">5 unidades o menos</div>
+            </div>
+            <div class="card border-rose-500/20 bg-rose-500/5">
+                <div class="text-[9px] text-rose-400 uppercase font-bold tracking-wider mb-1 flex items-center justify-center gap-1">
+                    <i data-lucide="alert-octagon" class="w-3 h-3"></i>Agotados
+                </div>
+                <div class="text-xl font-bold mono text-rose-400" id="alm-out-stock">0</div>
+                <div class="text-[10px] text-slate-500 mt-0.5">0 unidades en almacén</div>
+            </div>
+        </div>
+
+        <!-- Alertas de Stock Crítico y Reabastecimiento Rápido -->
+        <div class="glass rounded-xl p-4 flex-1">
+            <h4 class="text-xs font-bold text-amber-400 uppercase tracking-wider mb-2.5 flex items-center gap-1.5">
+                <i data-lucide="bell-ring" class="w-4 h-4 text-amber-400"></i>Productos Críticos (Agotados o por Agotarse)
+            </h4>
+            <div id="alm-critical-list" class="space-y-1.5 max-h-[380px] overflow-y-auto"></div>
+        </div>
+    </div>
+</div>
+
+<div id="pos-toast" class="hidden p-2 rounded-lg bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 text-[11px] text-center font-medium fin">✓ Datos del POS exportados</div>
+</div>
+</div>
+
+<!-- CFO Copilot Modular Scripts -->
+    <script src="js/data.js"></script>
+    <script src="js/utils.js"></script>
+    <script src="js/finance.js"></script>
+    <script src="js/pos.js"></script>
+    <script src="js/rbac.js"></script>
+    <script src="js/advisor.js"></script>
+    <script src="js/app.js"></script>
+
+<!-- CONTENEDOR DE IMPRESIÓN TÉRMICA (SOLO VISIBLE EN @media print) -->
+<div id="thermal-print-area" class="hidden"></div>
+
+</body>
+</html>
