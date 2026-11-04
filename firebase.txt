@@ -1,0 +1,17 @@
+// Import the functions you need from the SDKs you need
+import { initializeApp } from "firebase/app";
+// TODO: Add SDKs for Firebase products that you want to use
+// https://firebase.google.com/docs/web/setup#available-libraries
+
+// Your web app's Firebase configuration
+const firebaseConfig = {
+  apiKey: "AIzaSyBZYo5RlcwaiX4HkFWrQChZmkfE0LP32bY",
+  authDomain: "cfo-copilot-finanzas.firebaseapp.com",
+  projectId: "cfo-copilot-finanzas",
+  storageBucket: "cfo-copilot-finanzas.firebasestorage.app",
+  messagingSenderId: "1070377055459",
+  appId: "1:1070377055459:web:cef4ddd96954e88d3581d6"
+};
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
