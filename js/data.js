@@ -4,12 +4,12 @@
 // =====================================================================
 
 // --- 1. CONFIGURACIÓN FISCAL Y HUSOS HORARIOS ---
-let currentTaxZoneRate = parseFloat(localStorage.getItem('pos_tax_rate')) || 0.16;
-let currentAppTimeZone = localStorage.getItem('pos_app_tz') || 'America/Mexico_City';
+let currentTaxZoneRate = 0.16;
+let currentAppTimeZone = 'America/Mexico_City';
 
 // --- 2. CONTROL DE TURNOS Y ARQUEOS ---
-let currentShift = JSON.parse(localStorage.getItem('pos_current_shift')) || null;
-let shiftsHistory = JSON.parse(localStorage.getItem('pos_shifts_history')) || [];
+let currentShift = null;
+let shiftsHistory = [];
 
 // --- 3. ROLES Y USUARIOS POR DEFECTO (RBAC) ---
 const DEMO_MODE = true;
@@ -959,16 +959,12 @@ const REFACCIONES_CATALOG = [
     }
 ];;
 
-let catalog = JSON.parse(localStorage.getItem('pos_catalog') || 'null');
-if(!catalog || catalog.length === 0 || !catalog.some(p => p.id && p.id.startsWith('ref_'))){
-    catalog = JSON.parse(JSON.stringify(REFACCIONES_CATALOG));
-    localStorage.setItem('pos_catalog', JSON.stringify(catalog));
-}
+let catalog = JSON.parse(JSON.stringify(REFACCIONES_CATALOG));
 catalog.forEach(p => { if(p.stock === undefined || p.stock === null) p.stock = 20; });
 
 // --- 5. ESTADO OPERATIVO DEL PUNTO DE VENTA ---
-let salesLog = JSON.parse(localStorage.getItem('pos_sales') || '[]');
-let expenses = JSON.parse(localStorage.getItem('pos_expenses') || '[]');
+let salesLog = [];
+let expenses = [];
 let ticket = [];
 let posChart = null;
 let hourlyChart = null;

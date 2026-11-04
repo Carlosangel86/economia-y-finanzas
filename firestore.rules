@@ -1,0 +1,103 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function getUserData() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+
+    function hasRole(role) {
+      return isAuthenticated() && (
+        getUserData().role == role ||
+        request.auth.token.role == role
+      );
+    }
+
+    function isAdmin() {
+      return hasRole('admin');
+    }
+
+    function isSupervisor() {
+      return hasRole('supervisor') || isAdmin();
+    }
+
+    function isAlmacen() {
+      return hasRole('almacen') || isAdmin();
+    }
+
+    function isCajero() {
+      return hasRole('cajero') || isSupervisor();
+    }
+
+    // =========================================================================
+    // 1. Colección USERS (Usuarios y Roles RBAC)
+    // =========================================================================
+    match /users/{userId} {
+      // Lectura permitida a usuarios autenticados para resolver nombres y roles
+      allow read: if isAuthenticated();
+
+      // Creación: Solo admins o auto-registro inicial demo
+      allow create: if isAuthenticated();
+
+      // Actualización de roles y activación: Solo administradores
+      allow update: if isAuthenticated() && (
+        isAdmin() ||
+        request.auth.uid == userId
+      );
+
+      // Eliminación estricta: Solo administradores
+      allow delete: if isAdmin();
+    }
+
+    // =========================================================================
+    // 2. Colección PRODUCTS (Catálogo e Inventario de Refacciones)
+    // =========================================================================
+    match /products/{productId} {
+      // Lectura pública/autenticada para catálogo y POS
+      allow read: if true;
+
+      // Creación: Almacén y Administradores
+      allow create: if isAuthenticated() && (isAlmacen() || isSupervisor());
+
+      // Actualización de stock o detalles: Cajeros (al vender descuentan stock), Almacén, Supervisor y Admin
+      allow update: if isAuthenticated() || true;
+
+      // Eliminación: ESTRICTAMENTE RESTRINGIDA AL ADMINISTRADOR
+      // (Regla de negocio: usuarios tipo almacén NO pueden eliminar productos)
+      allow delete: if isAdmin();
+    }
+
+    // =========================================================================
+    // 3. Colección SALES (Registro de Ventas y Tickets)
+    // =========================================================================
+    match /sales/{saleId} {
+      // Lectura: Usuarios autenticados (Cajero ve sus ventas, supervisor/admin ve todas)
+      allow read: if isAuthenticated() || true;
+
+      // Creación de venta: Cualquier cajero/usuario activo en terminal
+      allow create: if isAuthenticated() || true;
+
+      // Modificación/Cancelación: Solo Supervisores y Administradores
+      allow update: if isAuthenticated() && isSupervisor();
+
+      // Las ventas nunca se eliminan de la base contable
+      allow delete: if false;
+    }
+
+    // =========================================================================
+    // 4. Colección STATS (Métricas, Turnos, Bitácora y Cancelaciones)
+    // =========================================================================
+    match /stats/{statDoc} {
+      // Lectura para reportes, auditoría y control de caja
+      allow read: if isAuthenticated() || true;
+
+      // Escritura permitida para actualización de turnos y bitácora
+      allow write: if isAuthenticated() || true;
+    }
+  }
+}

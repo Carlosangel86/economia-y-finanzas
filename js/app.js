@@ -233,8 +233,8 @@ function checkPosData(){
 }
 
 function getPosFinancials(){
-    const allSales=JSON.parse(localStorage.getItem('pos_sales')||'[]');
-    const ex=JSON.parse(localStorage.getItem('pos_expenses')||'[]');
+    const allSales = (Array.isArray(salesLog) && salesLog.length > 0) ? salesLog : [];
+    const ex = (Array.isArray(expenses) && expenses.length > 0) ? expenses : [];
     const sl = allSales.filter(s => s.status !== 'cancelled');
     if(sl.length===0)return null;
     // Get unique days that have sales

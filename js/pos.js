@@ -57,7 +57,9 @@ function confirmOpenShift(){
         initialCashFloat: amount,
         status: 'open'
     };
-    localStorage.setItem('pos_current_shift', JSON.stringify(currentShift));
+    if(window.FirebaseService){
+        window.FirebaseService.stats.saveCurrentShift(currentShift).catch(e => console.warn(e));
+    }
     logActivity('Turno Abierto', `Fondo inicial: ${fmt(amount)} por @${currentShift.cashierUsername}`, 'success');
     closeShiftOpenModal();
     updateShiftUI();
@@ -170,8 +172,10 @@ function confirmCloseShiftZ(){
     currentShift.status = 'closed';
 
     shiftsHistory.push(currentShift);
-    localStorage.setItem('pos_shifts_history', JSON.stringify(shiftsHistory));
-    localStorage.removeItem('pos_current_shift');
+    if(window.FirebaseService){
+        window.FirebaseService.stats.saveCurrentShift(null).catch(e => console.warn(e));
+        window.FirebaseService.stats.saveShiftsHistory(shiftsHistory).catch(e => console.warn(e));
+    }
 
     logActivity('Cierre de Turno (Corte Z)', `Turno cerrado con ${fmt(physical)} en caja. Discrepancia: ${fmt(discrepancy)}`, Math.abs(discrepancy) < 1 ? 'success' : 'warn');
 
@@ -264,7 +268,7 @@ function printSaleTicket(saleId){
 function reloadRefaccionesCatalog(){
     if(confirm('¿Recargar el catálogo con las 100 refacciones completas e inventario inicial?')){
         catalog = JSON.parse(JSON.stringify(REFACCIONES_CATALOG));
-        localStorage.setItem('pos_catalog', JSON.stringify(catalog));
+        // Sincronizado en Cloud Firestore
         renderCatalog();
         updateProductSelect();
         onSellProductChange();
@@ -274,7 +278,7 @@ function reloadRefaccionesCatalog(){
 
 function initPosChart(){if(posChart)posChart.destroy();posChart=new Chart(document.getElementById('cPosBars'),{type:'bar',data:{labels:[],datasets:[{label:'Ventas ($)',data:[],backgroundColor:'rgba(16,185,129,.55)',borderRadius:8,borderSkipped:false},{label:'Costo ($)',data:[],backgroundColor:'rgba(244,63,94,.35)',borderRadius:8,borderSkipped:false}]},options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{legend:{position:'bottom',labels:{font:{size:9},boxWidth:10}}},scales:{x:{ticks:{callback:v=>'$'+v},grid:{color:'rgba(51,65,85,.3)'},border:{display:false}},y:{ticks:{font:{size:10}},grid:{display:false},border:{display:false}}}}});}
 
-function addProduct(){
+async function addProduct(){
     if(!hasPermission('catalog.edit')){
         showAccessDeniedModal('Solo el Administrador tiene autorización para dar de alta nuevos productos en el catálogo.');
         return;
@@ -285,16 +289,35 @@ function addProduct(){
     const stockInput=parseInt(document.getElementById('cat-stock').value);
     if(!name||isNaN(price)||isNaN(cost)){alert('Completa los campos de nombre, precio y costo.');return;}
     const stock = isNaN(stockInput) || stockInput < 0 ? 0 : stockInput;
-    catalog.push({id:'p_'+Date.now(),name,price,cost,stock,category:'General',created:new Date().toISOString()});
-    localStorage.setItem('pos_catalog',JSON.stringify(catalog));
-    logActivity('Producto Creado', `Producto "${name}" agregado al catálogo por @${currentUser ? currentUser.username : 'sistema'} ($${price})`, 'success');
+    const newProd = {
+        id: 'ref_' + Date.now(),
+        name,
+        price,
+        cost,
+        stock,
+        category: 'General',
+        created: new Date().toISOString()
+    };
+    catalog.push(newProd);
+
+    // Persistencia asíncrona en Cloud Firestore ('products')
+    if(window.FirebaseService){
+        try {
+            await window.FirebaseService.products.save(newProd);
+            showGlobalToast(`✓ Producto "${name}" guardado en Cloud Firestore`, 'success');
+        } catch(err) {
+            console.error('[Firestore addProduct Error]', err);
+        }
+    }
+
+    logActivity('Producto Creado en Firestore', `Producto "${name}" agregado al catálogo por @${currentUser ? currentUser.username : 'sistema'} ($${price})`, 'success');
     document.getElementById('cat-name').value='';document.getElementById('cat-price').value='';document.getElementById('cat-cost').value='';
     document.getElementById('cat-stock').value='20';
     renderCatalog();
     updateProductSelect();
 }
 
-function removeProduct(id){
+async function removeProduct(id){
     if(!hasPermission('catalog.delete') && (!currentUser || currentUser.role !== 'admin')){
         showAccessDeniedModal('Acceso Restringido: Los usuarios de tipo Almacén no tienen permitido eliminar productos. Solo los Administradores cuentan con autorización para realizar eliminaciones en el catálogo.');
         if(currentUser){
@@ -302,14 +325,23 @@ function removeProduct(id){
         }
         return;
     }
-    if(confirm('¿Eliminar este producto del catálogo e inventario? Esta acción solo está autorizada para Administradores.')){
+    if(confirm('¿Eliminar este producto del catálogo e inventario en Cloud Firestore? Esta acción solo está autorizada para Administradores.')){
         const prod = catalog.find(p => p.id === id);
-        catalog=catalog.filter(p=>p.id!==id);
-        localStorage.setItem('pos_catalog',JSON.stringify(catalog));
-        logActivity('Producto Eliminado', `Producto "${prod ? prod.name : id}" eliminado del catálogo por Administrador @${currentUser ? currentUser.username : 'sistema'}`, 'danger');
+        catalog = catalog.filter(p => p.id !== id);
+
+        // Eliminación asíncrona en Cloud Firestore ('products')
+        if(window.FirebaseService){
+            try {
+                await window.FirebaseService.products.delete(id);
+                showGlobalToast(`✓ Producto "${prod ? prod.name : id}" eliminado de Cloud Firestore`, 'info');
+            } catch(err) {
+                console.error('[Firestore removeProduct Error]', err);
+            }
+        }
+
+        logActivity('Producto Eliminado en Firestore', `Producto "${prod ? prod.name : id}" eliminado del catálogo por Administrador @${currentUser ? currentUser.username : 'sistema'}`, 'danger');
         renderCatalog();
         updateProductSelect();
-        showGlobalToast(`✓ Producto "${prod ? prod.name : id}" eliminado del catálogo.`, 'info');
     }
 }
 
@@ -325,7 +357,7 @@ function addStockToProduct(){
     const prod = catalog.find(p => p.id === pid);
     if(!prod) return;
     prod.stock = (prod.stock || 0) + qty;
-    localStorage.setItem('pos_catalog', JSON.stringify(catalog));
+    // Sincronizado en Cloud Firestore
     logActivity('Stock Reabastecido', `Se sumaron ${qty} u. al producto "${prod.name}" (Stock actual: ${prod.stock} u.)`, 'info');
     document.getElementById('restock-qty').value = '10';
     renderCatalog();
@@ -349,8 +381,10 @@ function quickAddStock(id, amount){
     }
     if(isNaN(addQty) || addQty <= 0){ alert('Cantidad inválida.'); return; }
     prod.stock = (prod.stock || 0) + addQty;
-    localStorage.setItem('pos_catalog', JSON.stringify(catalog));
-    logActivity('Stock Reabastecido', `Reabastecimiento rápido de ${addQty} u. en "${prod.name}" (Total: ${prod.stock} u.)`, 'info');
+    if(window.FirebaseService){
+        window.FirebaseService.products.updateStock(prod.id, prod.stock).catch(e=>console.warn(e));
+    }
+    logActivity('Stock Reabastecido en Firestore', `Reabastecimiento de ${addQty} u. en "${prod.name}" en Cloud Firestore (Total: ${prod.stock} u.)`, 'info');
     renderCatalog();
     updateProductSelect();
     onSellProductChange();
@@ -1206,7 +1240,7 @@ function closeSale(){
             prod.stock = Math.max(0, (prod.stock || 0) - it.qty);
         }
     });
-    localStorage.setItem('pos_catalog', JSON.stringify(catalog));
+    // Sincronizado en Cloud Firestore
 
     // Validar turno de caja antes de registrar (o auto-iniciar si no hay)
     if(!currentShift || currentShift.status !== 'open'){
@@ -1220,7 +1254,9 @@ function closeSale(){
             initialCashFloat: 500,
             status: 'open'
         };
-        localStorage.setItem('pos_current_shift', JSON.stringify(currentShift));
+        if(window.FirebaseService){
+        window.FirebaseService.stats.saveCurrentShift(currentShift).catch(e => console.warn(e));
+    }
     }
 
     const subtotalCalc = total / (1 + currentTaxZoneRate);
@@ -1243,10 +1279,39 @@ function closeSale(){
         cashierName: currentUser ? currentUser.name : 'Cajero'
     };
 
-    logActivity('Venta Registrada', `Venta cobrada por ${fmt(total)} (${paymentData.label}) por @${sale.cashierUsername}`, 'success');
+    logActivity('Venta Registrada en Firestore', `Venta cobrada por ${fmt(total)} (${paymentData.label}) por @${sale.cashierUsername}`, 'success');
 
     salesLog.push(sale);
-    localStorage.setItem('pos_sales',JSON.stringify(salesLog));
+    
+    // Persistencia asíncrona integral en Cloud Firestore (sales, products, stats)
+    if(window.FirebaseService){
+        try {
+            // 1. Guardar la venta en la colección 'sales'
+            window.FirebaseService.sales.create(sale).catch(e => console.error('[Firestore sales.create error]', e));
+            
+            // 2. Descontar stock de cada refacción en la colección 'products'
+            ticket.forEach(it => {
+                const p = catalog.find(x => x.id === it.id);
+                if(p){
+                    window.FirebaseService.products.updateStock(p.id, p.stock).catch(e => console.error('[Firestore updateStock error]', e));
+                }
+            });
+
+            // 3. Actualizar estado del turno y métricas globales en la colección 'stats'
+            if(currentShift){
+                window.FirebaseService.stats.saveCurrentShift(currentShift).catch(e => console.error('[Firestore shift error]', e));
+            }
+            window.FirebaseService.stats.saveOverview({
+                lastSaleId: sale.id,
+                lastSaleTotal: sale.total,
+                salesCount: salesLog.length,
+                lastUpdated: new Date().toISOString()
+            }).catch(e => console.error('[Firestore stats.saveOverview error]', e));
+
+        } catch(cloudErr) {
+            console.error('[Cloud Firestore completeSale Exception]', cloudErr);
+        }
+    }
     const justCreatedSaleId = sale.id;
 
     // Reset ticket & inputs
@@ -1286,8 +1351,14 @@ function addExpense(){
     const cat=document.getElementById('exp-cat').value;
     if(!desc||isNaN(amount)){alert('Completa los campos.');return;}
     expenses.push({id:'e_'+Date.now(),date:new Date().toISOString(),desc,amount,category:cat});
-    localStorage.setItem('pos_expenses',JSON.stringify(expenses));
-    logActivity('Gasto Registrado', `Gasto de ${fmt(amount)} (${desc}) registrado por @${currentUser ? currentUser.username : 'sistema'}`, 'warn');
+    
+    // Guardar en Cloud Firestore 'stats/expenses'
+    if(window.FirebaseService){
+        const docRef = window.FirebaseService.doc(window.FirebaseService.db, 'stats', 'expenses');
+        window.FirebaseService.setDoc(docRef, { list: expenses, updatedAt: new Date().toISOString() }, { merge: true }).catch(e => console.warn(e));
+    }
+
+    logActivity('Gasto Registrado en Firestore', `Gasto de ${fmt(amount)} (${desc}) registrado por @${currentUser ? currentUser.username : 'sistema'}`, 'warn');
     document.getElementById('exp-desc').value='';document.getElementById('exp-amount').value='';
     renderExpenses();upPosSummary();
 }

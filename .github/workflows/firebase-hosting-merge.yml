@@ -1,0 +1,30 @@
+# Flujo de CI/CD para despliegue automatizado en Firebase Hosting
+# Proyecto: cfo-copilot-finanzas
+# Repositorio: https://github.com/Carlosangel86/economia-y-finanzas
+
+name: Deploy to Firebase Hosting on merge
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  checks: write
+  contents: read
+  deployments: write
+
+jobs:
+  build_and_deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Deploy to Firebase Hosting
+        uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: ${{ secrets.GITHUB_TOKEN }}
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_CFO_COPILOT_FINANZAS }}
+          channelId: live
+          projectId: cfo-copilot-finanzas
