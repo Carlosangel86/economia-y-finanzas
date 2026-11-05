@@ -1156,16 +1156,83 @@ function escapeHtml(str) {
         .replace(/'/g, '&#39;');
 }
 
-function openProductDropdown(type) {
-    filterProductDropdown(type);
+function highlightSearchMatch(text, query) {
+    if (!text) return '';
+    if (!query) return escapeHtml(text);
+    const normText = normalizeSearchText(text);
+    const normQuery = normalizeSearchText(query);
+    const idx = normText.indexOf(normQuery);
+    if (idx === -1) return escapeHtml(text);
+    const matchLen = normQuery.length;
+    const before = text.slice(0, idx);
+    const match = text.slice(idx, idx + matchLen);
+    const after = text.slice(idx + matchLen);
+    return `${escapeHtml(before)}<span class="bg-amber-400/30 text-amber-200 font-bold px-0.5 rounded">${escapeHtml(match)}</span>${escapeHtml(after)}`;
+}
+
+function toggleProductDropdown(type) {
     const list = document.getElementById(`${type}-dropdown-list`);
-    if (list) list.classList.remove('hidden');
-    if (window.lucide && typeof lucide.createIcons === 'function') lucide.createIcons();
+    if (!list) return;
+    const isHidden = list.classList.contains('hidden');
+    if (isHidden) {
+        openProductDropdown(type);
+        const searchInput = document.getElementById(`${type}-product-search`);
+        if (searchInput) searchInput.focus();
+    } else {
+        closeProductDropdown(type);
+    }
+}
+
+function handleProductInputClick(type) {
+    const searchInput = document.getElementById(`${type}-product-search`);
+    const list = document.getElementById(`${type}-dropdown-list`);
+    if (searchInput) searchInput.select();
+    if (!list || list.classList.contains('hidden')) {
+        openProductDropdown(type);
+    }
+}
+
+function handleProductInputFocus(type) {
+    const list = document.getElementById(`${type}-dropdown-list`);
+    if (!list || list.classList.contains('hidden')) {
+        openProductDropdown(type);
+    }
+}
+
+function handleProductInputKeydown(type, e) {
+    if (e.key === 'Escape') {
+        closeProductDropdown(type);
+    } else if (e.key === 'Enter') {
+        e.preventDefault();
+        const list = document.getElementById(`${type}-dropdown-list`);
+        if (list && !list.classList.contains('hidden')) {
+            const firstOption = list.querySelector('[data-product-id]');
+            if (firstOption) {
+                const pid = firstOption.getAttribute('data-product-id');
+                selectDropdownProduct(type, pid);
+            }
+        }
+    }
+}
+
+function openProductDropdown(type) {
+    const list = document.getElementById(`${type}-dropdown-list`);
+    const chevron = document.getElementById(`${type}-chevron-icon`);
+    if (!list) return;
+
+    filterProductDropdown(type);
+    list.classList.remove('hidden');
+    if (chevron) chevron.style.transform = 'rotate(180deg)';
+    if (window.lucide && typeof lucide.createIcons === 'function') {
+        lucide.createIcons();
+    }
 }
 
 function closeProductDropdown(type) {
     const list = document.getElementById(`${type}-dropdown-list`);
+    const chevron = document.getElementById(`${type}-chevron-icon`);
     if (list) list.classList.add('hidden');
+    if (chevron) chevron.style.transform = 'rotate(0deg)';
 }
 
 function clearProductSelection(type) {
@@ -1173,14 +1240,19 @@ function clearProductSelection(type) {
     const selectEl = document.getElementById(`${type}-product`);
     const clearBtn = document.getElementById(`${type}-clear-btn`);
 
-    if (searchInput) searchInput.value = '';
+    if (searchInput) {
+        searchInput.value = '';
+        searchInput.focus();
+    }
     if (selectEl) selectEl.value = '';
     if (clearBtn) clearBtn.classList.add('hidden');
 
     if (type === 'sell') {
         onSellProductChange(true);
     }
-    closeProductDropdown(type);
+    filterProductDropdown(type);
+    const list = document.getElementById(`${type}-dropdown-list`);
+    if (list) list.classList.remove('hidden');
 }
 
 function selectDropdownProduct(type, pid) {
@@ -1196,12 +1268,12 @@ function selectDropdownProduct(type, pid) {
 
     if (type === 'sell') {
         if (searchInput) {
-            searchInput.value = `${prod.name} (${fmt(prod.price)}) · Stock: ${prod.stock} u.`;
+            searchInput.value = `${prod.name} — ${fmt(prod.price)}`;
         }
         onSellProductChange(false);
     } else if (type === 'restock') {
         if (searchInput) {
-            searchInput.value = `${prod.name} (Stock actual: ${prod.stock || 0} u.)`;
+            searchInput.value = `${prod.name} (Stock: ${prod.stock || 0} u.)`;
         }
     }
 
@@ -1214,44 +1286,75 @@ function filterProductDropdown(type) {
     const clearBtn = document.getElementById(`${type}-clear-btn`);
     if (!listContainer) return;
 
-    const rawVal = searchInput ? searchInput.value : '';
+    const rawVal = searchInput ? searchInput.value.trim() : '';
     const query = normalizeSearchText(rawVal);
+
     if (clearBtn) {
         clearBtn.classList.toggle('hidden', !rawVal);
     }
 
+    // Si el texto en el input es el formato exacto del producto ya seleccionado, permitimos ver todo al desplegar
+    const selectEl = document.getElementById(`${type}-product`);
+    const selectedProd = (catalog || []).find(p => p.id === (selectEl ? selectEl.value : ''));
+    let effectiveQuery = query;
+    if (selectedProd && rawVal.includes(selectedProd.name)) {
+        effectiveQuery = '';
+    }
+
     // Filtrar catálogo ignorando mayúsculas, minúsculas y acentos
     const matches = (catalog || []).filter(p => {
-        if (!query) return true;
+        if (!effectiveQuery) return true;
         const normName = normalizeSearchText(p.name);
         const normCat = normalizeSearchText(p.category);
-        return normName.includes(query) || normCat.includes(query);
+        return normName.includes(effectiveQuery) || normCat.includes(effectiveQuery);
     });
 
-    if (matches.length === 0) {
-        listContainer.innerHTML = `
-            <div class="p-3 text-center text-xs text-slate-400">
-                <i data-lucide="search-x" class="w-4 h-4 mx-auto mb-1 text-slate-500"></i>
-                No se encontraron productos que coincidan con "<b>${escapeHtml(rawVal)}</b>".
+    // Encabezado de estado de búsqueda dentro del desplegable
+    let headerHtml = '';
+    if (effectiveQuery) {
+        headerHtml = `
+            <div class="px-3 py-1.5 text-[10px] font-semibold text-sky-300 bg-slate-900 border-b border-slate-800 flex justify-between items-center sticky top-0 z-20">
+                <span><i data-lucide="filter" class="w-3 h-3 inline mr-1 text-sky-400"></i>${matches.length} ${matches.length === 1 ? 'coincidencia' : 'coincidencias'}</span>
+                <span class="text-[9px] text-slate-400 truncate max-w-[130px]">Filtro: "${escapeHtml(rawVal)}"</span>
             </div>
         `;
     } else {
-        listContainer.innerHTML = matches.map(p => {
+        headerHtml = `
+            <div class="px-3 py-1.5 text-[10px] font-semibold text-slate-300 bg-slate-900 border-b border-slate-800 flex justify-between items-center sticky top-0 z-20">
+                <span><i data-lucide="list" class="w-3 h-3 inline mr-1 text-slate-400"></i>Catálogo (${catalog.length} refacciones)</span>
+                <span class="text-[9px] text-slate-500">Haz clic para elegir</span>
+            </div>
+        `;
+    }
+
+    if (matches.length === 0) {
+        listContainer.innerHTML = headerHtml + `
+            <div class="p-4 text-center text-xs text-slate-400">
+                <i data-lucide="search-x" class="w-5 h-5 mx-auto mb-1.5 text-rose-400/80"></i>
+                <div class="font-medium text-slate-200 mb-0.5">Sin coincidencias</div>
+                <div class="text-[10px] text-slate-500">No encontramos productos con "<b>${escapeHtml(rawVal)}</b>".</div>
+                <button type="button" onclick="clearProductSelection('${type}')" class="mt-2.5 px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-[10.5px] text-sky-300 border border-slate-700 transition">Ver todo el catálogo</button>
+            </div>
+        `;
+    } else {
+        const itemsHtml = matches.map(p => {
             const isOut = (p.stock || 0) <= 0;
-            const catBadge = p.category ? `<span class="pill bg-slate-800 text-slate-400 border border-slate-700 text-[8.5px] uppercase font-mono">${escapeHtml(p.category)}</span>` : '';
+            const catBadge = p.category ? `<span class="pill bg-slate-800 text-slate-300 border border-slate-700 text-[8.5px] uppercase font-mono">${escapeHtml(p.category)}</span>` : '';
+            const displayName = highlightSearchMatch(p.name, effectiveQuery);
 
             if (type === 'sell') {
                 const stockBadge = isOut 
-                    ? `<span class="pill bg-rose-500/20 text-rose-300 border border-rose-500/30 text-[9px] font-bold">⛔ AGOTADO</span>`
+                    ? `<span class="pill bg-rose-500/20 text-rose-300 border border-rose-500/35 text-[9px] font-bold">⛔ AGOTADO</span>`
                     : `<span class="text-xs font-semibold text-emerald-400 font-mono">Stock: ${p.stock} u.</span>`;
 
                 return `
-                    <div onclick="selectDropdownProduct('sell', '${p.id}')" 
-                         class="p-2.5 hover:bg-sky-600/20 cursor-pointer transition flex items-center justify-between gap-2 text-left group">
+                    <div data-product-id="${p.id}"
+                         onclick="selectDropdownProduct('sell', '${p.id}')" 
+                         class="p-2.5 hover:bg-sky-600/25 cursor-pointer transition flex items-center justify-between gap-2 text-left group border-b border-slate-800/60 last:border-b-0">
                         <div class="flex-1 min-w-0">
                             <div class="flex items-center gap-1.5 mb-0.5">
                                 ${catBadge}
-                                <span class="text-xs font-medium text-slate-200 group-hover:text-white truncate">${escapeHtml(p.name)}</span>
+                                <span class="text-xs font-medium text-slate-200 group-hover:text-white truncate">${displayName}</span>
                             </div>
                             <div class="text-[11px] text-sky-400 font-semibold font-mono">
                                 ${fmt(p.price)}
@@ -1263,14 +1366,14 @@ function filterProductDropdown(type) {
                     </div>
                 `;
             } else {
-                // restock
                 return `
-                    <div onclick="selectDropdownProduct('restock', '${p.id}')" 
-                         class="p-2.5 hover:bg-indigo-600/20 cursor-pointer transition flex items-center justify-between gap-2 text-left group">
+                    <div data-product-id="${p.id}"
+                         onclick="selectDropdownProduct('restock', '${p.id}')" 
+                         class="p-2.5 hover:bg-indigo-600/25 cursor-pointer transition flex items-center justify-between gap-2 text-left group border-b border-slate-800/60 last:border-b-0">
                         <div class="flex-1 min-w-0">
                             <div class="flex items-center gap-1.5 mb-0.5">
                                 ${catBadge}
-                                <span class="text-xs font-medium text-slate-200 group-hover:text-white truncate">${escapeHtml(p.name)}</span>
+                                <span class="text-xs font-medium text-slate-200 group-hover:text-white truncate">${displayName}</span>
                             </div>
                             <div class="text-[11px] text-slate-400 font-mono">
                                 Costo: ${fmt(p.cost || 0)} · Precio: ${fmt(p.price || 0)}
@@ -1283,10 +1386,14 @@ function filterProductDropdown(type) {
                 `;
             }
         }).join('');
+
+        listContainer.innerHTML = headerHtml + itemsHtml;
     }
 
     listContainer.classList.remove('hidden');
-    if (window.lucide && typeof lucide.createIcons === 'function') lucide.createIcons();
+    if (window.lucide && typeof lucide.createIcons === 'function') {
+        lucide.createIcons();
+    }
 }
 
 // Cierre automático al hacer clic fuera del componente (Light Dismiss)
