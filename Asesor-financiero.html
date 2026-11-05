@@ -756,7 +756,35 @@
         </h4>
         <p class="text-[10px] text-slate-400 mb-2.5">Agrega más unidades a productos que ya tienes dados de alta en tu inventario.</p>
         <div class="space-y-2">
-            <select id="restock-product" class="pos-input"><option value="">— Seleccionar producto para reabastecer —</option></select>
+            <!-- Buscador Interactivo de Producto para Reabastecer -->
+            <div class="relative" id="restock-combobox-wrap">
+                <div class="relative flex items-center">
+                    <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3 pointer-events-none"></i>
+                    <input id="restock-product-search" 
+                           type="text" 
+                           class="pos-input pl-9 pr-8 text-xs font-medium focus:border-indigo-500" 
+                           placeholder="Escribe para buscar producto por nombre..." 
+                           autocomplete="off"
+                           onclick="this.select()"
+                           onfocus="openProductDropdown('restock')"
+                           oninput="filterProductDropdown('restock')">
+                    <button type="button" 
+                            id="restock-clear-btn" 
+                            onclick="clearProductSelection('restock')" 
+                            class="hidden absolute right-2.5 p-1 rounded-md text-slate-400 hover:text-white hover:bg-slate-700/60 transition"
+                            title="Limpiar selección">
+                        <i data-lucide="x" class="w-3.5 h-3.5"></i>
+                    </button>
+                </div>
+                <!-- Lista Desplegable Flotante -->
+                <div id="restock-dropdown-list" 
+                     class="hidden absolute left-0 right-0 top-full mt-1.5 max-h-56 overflow-y-auto rounded-xl bg-slate-900/98 border border-slate-700/80 shadow-2xl z-50 divide-y divide-slate-800/60 backdrop-blur-xl">
+                </div>
+                <!-- Select oculto sincronizado para compatibilidad total -->
+                <select id="restock-product" class="hidden">
+                    <option value="">— Seleccionar producto para reabastecer —</option>
+                </select>
+            </div>
             <div class="flex gap-2">
                 <input id="restock-qty" type="number" min="1" step="1" value="10" class="pos-input flex-1" placeholder="Unidades a sumar">
                 <button onclick="addStockToProduct()" class="pos-btn bg-indigo-600 hover:bg-indigo-500 text-white shrink-0 text-xs font-semibold px-4"><i data-lucide="plus-circle" class="w-3.5 h-3.5"></i>Sumar al Stock</button>
@@ -787,8 +815,39 @@
         <h4 class="text-xs font-bold text-sky-400 uppercase tracking-wider mb-3 flex items-center gap-1.5"><i data-lucide="receipt" class="w-3.5 h-3.5"></i>Nueva Venta</h4>
         <div class="space-y-2.5">
             <div>
-                <label class="text-[9px] text-slate-400 font-semibold mb-1 block">Producto / Servicio</label>
-                <select id="sell-product" class="pos-input" onchange="onSellProductChange()"><option value="">— Seleccionar producto —</option></select>
+                <label class="text-[9px] text-slate-400 font-semibold mb-1 flex items-center justify-between">
+                    <span>Producto / Servicio</span>
+                    <span class="text-[9px] text-sky-400/80 font-normal">Búsqueda rápida (ignora acentos)</span>
+                </label>
+                <!-- Buscador Interactivo de Producto para Venta -->
+                <div class="relative" id="sell-combobox-wrap">
+                    <div class="relative flex items-center">
+                        <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3 pointer-events-none"></i>
+                        <input id="sell-product-search" 
+                               type="text" 
+                               class="pos-input pl-9 pr-8 text-xs font-medium focus:border-sky-500" 
+                               placeholder="Escribe para buscar producto por nombre..." 
+                               autocomplete="off"
+                               onclick="this.select()"
+                               onfocus="openProductDropdown('sell')"
+                               oninput="filterProductDropdown('sell')">
+                        <button type="button" 
+                                id="sell-clear-btn" 
+                                onclick="clearProductSelection('sell')" 
+                                class="hidden absolute right-2.5 p-1 rounded-md text-slate-400 hover:text-white hover:bg-slate-700/60 transition"
+                                title="Limpiar selección">
+                            <i data-lucide="x" class="w-3.5 h-3.5"></i>
+                        </button>
+                    </div>
+                    <!-- Lista Desplegable Flotante -->
+                    <div id="sell-dropdown-list" 
+                         class="hidden absolute left-0 right-0 top-full mt-1.5 max-h-56 overflow-y-auto rounded-xl bg-slate-900/98 border border-slate-700/80 shadow-2xl z-50 divide-y divide-slate-800/60 backdrop-blur-xl">
+                    </div>
+                    <!-- Select oculto sincronizado para compatibilidad total -->
+                    <select id="sell-product" class="hidden" onchange="onSellProductChange()">
+                        <option value="">— Seleccionar producto —</option>
+                    </select>
+                </div>
             </div>
             <!-- Aviso de Agotado o Alerta de Stock -->
             <div id="sell-stock-alert" class="hidden"></div>

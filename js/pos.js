@@ -1042,6 +1042,7 @@ async function addStockToProduct(){
     }
     logActivity('Stock Reabastecido', `Se sumaron ${qty} u. al producto "${prod.name}" en Firestore.`, 'info');
     document.getElementById('restock-qty').value = '10';
+    clearProductSelection('restock');
     renderCatalog();
     updateProductSelect();
     onSellProductChange();
@@ -1132,6 +1133,175 @@ function renderCatalog(){
     updateProductSelect();
 }
 
+// ===== BUSCADOR INTELIGENTE DE PRODUCTOS (INSENSIBLE A MAYÚSCULAS Y ACENTOS) =====
+
+function normalizeSearchText(str) {
+    if (!str) return '';
+    return str
+        .toString()
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .trim();
+}
+
+function escapeHtml(str) {
+    if (!str) return '';
+    return str
+        .toString()
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
+function openProductDropdown(type) {
+    filterProductDropdown(type);
+    const list = document.getElementById(`${type}-dropdown-list`);
+    if (list) list.classList.remove('hidden');
+    if (window.lucide && typeof lucide.createIcons === 'function') lucide.createIcons();
+}
+
+function closeProductDropdown(type) {
+    const list = document.getElementById(`${type}-dropdown-list`);
+    if (list) list.classList.add('hidden');
+}
+
+function clearProductSelection(type) {
+    const searchInput = document.getElementById(`${type}-product-search`);
+    const selectEl = document.getElementById(`${type}-product`);
+    const clearBtn = document.getElementById(`${type}-clear-btn`);
+
+    if (searchInput) searchInput.value = '';
+    if (selectEl) selectEl.value = '';
+    if (clearBtn) clearBtn.classList.add('hidden');
+
+    if (type === 'sell') {
+        onSellProductChange(true);
+    }
+    closeProductDropdown(type);
+}
+
+function selectDropdownProduct(type, pid) {
+    const prod = (catalog || []).find(p => p.id === pid);
+    if (!prod) return;
+
+    const selectEl = document.getElementById(`${type}-product`);
+    const searchInput = document.getElementById(`${type}-product-search`);
+    const clearBtn = document.getElementById(`${type}-clear-btn`);
+
+    if (selectEl) selectEl.value = prod.id;
+    if (clearBtn) clearBtn.classList.remove('hidden');
+
+    if (type === 'sell') {
+        if (searchInput) {
+            searchInput.value = `${prod.name} (${fmt(prod.price)}) · Stock: ${prod.stock} u.`;
+        }
+        onSellProductChange(false);
+    } else if (type === 'restock') {
+        if (searchInput) {
+            searchInput.value = `${prod.name} (Stock actual: ${prod.stock || 0} u.)`;
+        }
+    }
+
+    closeProductDropdown(type);
+}
+
+function filterProductDropdown(type) {
+    const searchInput = document.getElementById(`${type}-product-search`);
+    const listContainer = document.getElementById(`${type}-dropdown-list`);
+    const clearBtn = document.getElementById(`${type}-clear-btn`);
+    if (!listContainer) return;
+
+    const rawVal = searchInput ? searchInput.value : '';
+    const query = normalizeSearchText(rawVal);
+    if (clearBtn) {
+        clearBtn.classList.toggle('hidden', !rawVal);
+    }
+
+    // Filtrar catálogo ignorando mayúsculas, minúsculas y acentos
+    const matches = (catalog || []).filter(p => {
+        if (!query) return true;
+        const normName = normalizeSearchText(p.name);
+        const normCat = normalizeSearchText(p.category);
+        return normName.includes(query) || normCat.includes(query);
+    });
+
+    if (matches.length === 0) {
+        listContainer.innerHTML = `
+            <div class="p-3 text-center text-xs text-slate-400">
+                <i data-lucide="search-x" class="w-4 h-4 mx-auto mb-1 text-slate-500"></i>
+                No se encontraron productos que coincidan con "<b>${escapeHtml(rawVal)}</b>".
+            </div>
+        `;
+    } else {
+        listContainer.innerHTML = matches.map(p => {
+            const isOut = (p.stock || 0) <= 0;
+            const catBadge = p.category ? `<span class="pill bg-slate-800 text-slate-400 border border-slate-700 text-[8.5px] uppercase font-mono">${escapeHtml(p.category)}</span>` : '';
+
+            if (type === 'sell') {
+                const stockBadge = isOut 
+                    ? `<span class="pill bg-rose-500/20 text-rose-300 border border-rose-500/30 text-[9px] font-bold">⛔ AGOTADO</span>`
+                    : `<span class="text-xs font-semibold text-emerald-400 font-mono">Stock: ${p.stock} u.</span>`;
+
+                return `
+                    <div onclick="selectDropdownProduct('sell', '${p.id}')" 
+                         class="p-2.5 hover:bg-sky-600/20 cursor-pointer transition flex items-center justify-between gap-2 text-left group">
+                        <div class="flex-1 min-w-0">
+                            <div class="flex items-center gap-1.5 mb-0.5">
+                                ${catBadge}
+                                <span class="text-xs font-medium text-slate-200 group-hover:text-white truncate">${escapeHtml(p.name)}</span>
+                            </div>
+                            <div class="text-[11px] text-sky-400 font-semibold font-mono">
+                                ${fmt(p.price)}
+                            </div>
+                        </div>
+                        <div class="text-right shrink-0">
+                            ${stockBadge}
+                        </div>
+                    </div>
+                `;
+            } else {
+                // restock
+                return `
+                    <div onclick="selectDropdownProduct('restock', '${p.id}')" 
+                         class="p-2.5 hover:bg-indigo-600/20 cursor-pointer transition flex items-center justify-between gap-2 text-left group">
+                        <div class="flex-1 min-w-0">
+                            <div class="flex items-center gap-1.5 mb-0.5">
+                                ${catBadge}
+                                <span class="text-xs font-medium text-slate-200 group-hover:text-white truncate">${escapeHtml(p.name)}</span>
+                            </div>
+                            <div class="text-[11px] text-slate-400 font-mono">
+                                Costo: ${fmt(p.cost || 0)} · Precio: ${fmt(p.price || 0)}
+                            </div>
+                        </div>
+                        <div class="text-right shrink-0">
+                            <span class="text-xs font-semibold text-indigo-300 font-mono">Stock: ${p.stock || 0} u.</span>
+                        </div>
+                    </div>
+                `;
+            }
+        }).join('');
+    }
+
+    listContainer.classList.remove('hidden');
+    if (window.lucide && typeof lucide.createIcons === 'function') lucide.createIcons();
+}
+
+// Cierre automático al hacer clic fuera del componente (Light Dismiss)
+document.addEventListener('click', (e) => {
+    const sellWrap = document.getElementById('sell-combobox-wrap');
+    const restockWrap = document.getElementById('restock-combobox-wrap');
+
+    if (sellWrap && !sellWrap.contains(e.target)) {
+        closeProductDropdown('sell');
+    }
+    if (restockWrap && !restockWrap.contains(e.target)) {
+        closeProductDropdown('restock');
+    }
+});
+
 function updateProductSelect(){
     const sel=document.getElementById('sell-product');
     const restockSel=document.getElementById('restock-product');
@@ -1162,6 +1332,8 @@ function updateProductSelect(){
 function onSellProductChange(fromProgrammatic = false){
     const sel = document.getElementById('sell-product');
     const pid = sel ? sel.value : '';
+    const searchInput = document.getElementById('sell-product-search');
+    const clearBtn = document.getElementById('sell-clear-btn');
     const alertEl = document.getElementById('sell-stock-alert');
     const badgeEl = document.getElementById('sell-stock-badge');
     const badgeNum = document.getElementById('sell-stock-num');
@@ -1170,6 +1342,8 @@ function onSellProductChange(fromProgrammatic = false){
     const qtyLabel = document.getElementById('sell-qty-label');
 
     if(!pid){
+        if(searchInput && fromProgrammatic) searchInput.value = '';
+        if(clearBtn && fromProgrammatic) clearBtn.classList.add('hidden');
         if(alertEl){ alertEl.classList.add('hidden'); alertEl.innerHTML = ''; }
         if(badgeEl) badgeEl.classList.add('hidden');
         if(btnAdd){
@@ -1183,6 +1357,11 @@ function onSellProductChange(fromProgrammatic = false){
 
     const prod = catalog.find(p => p.id === pid);
     if(!prod) return;
+
+    if(searchInput && (!searchInput.value || fromProgrammatic === false)){
+        searchInput.value = `${prod.name} (${fmt(prod.price)}) · Stock: ${prod.stock} u.`;
+        if(clearBtn) clearBtn.classList.remove('hidden');
+    }
 
     const stock = prod.stock || 0;
     const inTicket = (ticket.find(t => t.id === pid)?.qty) || 0;
@@ -1436,11 +1615,7 @@ function quickSellProduct(pid){
         return;
     }
     showPosTab('sell');
-    const sel = document.getElementById('sell-product');
-    if(sel){
-        sel.value = pid;
-        onSellProductChange(false);
-    }
+    selectDropdownProduct('sell', pid);
 }
 
 function openModifyTicketQtyModal(id){
