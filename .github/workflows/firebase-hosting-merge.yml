@@ -30,9 +30,29 @@ jobs:
           node-version: 20
 
       - name: Authenticate to Google Cloud
+        id: gauth
         uses: google-github-actions/auth@v2
         with:
           credentials_json: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_ASESOR_FINANCIERO_83679 || secrets.FIREBASE_SERVICE_ACCOUNT || secrets.FIREBASE_SERVICE_ACCOUNT_CFO_COPILOT_FINANZAS || secrets.FIREBASE_SERVICE_ACCOUNT_KEY || secrets.FIREBASE_CREDENTIALS || vars.FIREBASE_SERVICE_ACCOUNT_ASESOR_FINANCIERO_83679 || vars.FIREBASE_SERVICE_ACCOUNT || vars.FIREBASE_SERVICE_ACCOUNT_CFO_COPILOT_FINANZAS }}
 
       - name: Deploy to Firebase Hosting
-        run: npx --yes firebase-tools deploy --only hosting --project asesor-financiero-83679 --non-interactive
+        id: deploy
+        run: |
+          echo "### 🚀 Diagnóstico y Despliegue en Firebase Hosting" >> $GITHUB_STEP_SUMMARY
+          set +e
+          npx --yes firebase-tools deploy --only hosting --project asesor-financiero-83679 --debug > deploy.log 2>&1
+          STATUS=$?
+          cat deploy.log
+          echo "" >> $GITHUB_STEP_SUMMARY
+          if [ $STATUS -eq 0 ]; then
+            echo "✅ **Despliegue exitoso en Firebase Hosting**" >> $GITHUB_STEP_SUMMARY
+            echo "- 🌐 URL en vivo: https://asesor-financiero-83679.web.app" >> $GITHUB_STEP_SUMMARY
+            echo "- 🌐 Dominio alternativo: https://asesor-financiero-83679.firebaseapp.com" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ **El despliegue falló con código de salida: $STATUS**" >> $GITHUB_STEP_SUMMARY
+            echo "#### Diagnóstico de error en Firebase CLI:" >> $GITHUB_STEP_SUMMARY
+            echo '```text' >> $GITHUB_STEP_SUMMARY
+            tail -n 80 deploy.log >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+          fi
+          exit $STATUS

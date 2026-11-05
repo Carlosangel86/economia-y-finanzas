@@ -1,6 +1,5 @@
 {
   "hosting": {
-    "site": "asesor-financiero-83679",
     "public": ".",
     "ignore": [
       "firebase.json",
