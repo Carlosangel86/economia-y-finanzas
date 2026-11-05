@@ -1,8 +1,10 @@
 // ===== CONTROL DE ACCESO BASADO EN ROLES (RBAC) & GESTIÓN DE USUARIOS =====
+// Sistema Empresarial Seguro con Firebase Authentication & Cloud Firestore
 
-// ===== CONTROL DE ACCESO BASADO EN ROLES (RBAC) =====
-const DEMO_MODE = true;
+// DEMO_MODE desactivado permanentemente para exigir autenticación real
+const DEMO_MODE = false;
 
+// ===== MATRIZ DE PERMISOS RBAC =====
 const ROLE_MATRIX = {
     admin: [
         'pos.sell', 'sales.view_own', 'sales.view_all', 'sales.request_cancel',
@@ -29,20 +31,38 @@ const ROLE_MATRIX = {
     ]
 };
 
+// ===== CÓDIGOS DE ACCESO CORPORATIVOS POR ÁREA / ROL =====
+const ROLE_ACCESS_KEYS = {
+    'ADMIN-8367': { role: 'admin', label: 'Administrador General', badge: 'badge-role-admin', desc: 'Control total de la plataforma, finanzas, catálogo y usuarios.' },
+    'SUPER-5412': { role: 'supervisor', label: 'Supervisor Operativo', badge: 'badge-role-supervisor', desc: 'Supervisión de caja, arqueo Z y aprobación de cancelaciones.' },
+    'CAJA-1098':  { role: 'cajero', label: 'Cajero Punto de Venta', badge: 'badge-role-cajero', desc: 'Terminal exclusiva de cobro POS, tickets y arqueo X.' },
+    'ANAL-7734':  { role: 'analista', label: 'Analista Financiero', badge: 'badge-role-analista', desc: 'Estadísticas de ventas, proyecciones y Asesor IA.' },
+    'ALMA-3341':  { role: 'almacen', label: 'Encargado de Almacén', badge: 'badge-role-almacen', desc: 'Control de inventario, existencias y catálogo de piezas.' }
+};
+
+function resolveAccessCode(inputCode) {
+    if (!inputCode) return null;
+    const clean = inputCode.trim().toUpperCase().replace(/[\s\-_]+/g, '');
+    for (const [key, val] of Object.entries(ROLE_ACCESS_KEYS)) {
+        const keyClean = key.replace(/[\s\-_]+/g, '');
+        if (clean === keyClean) {
+            return { code: key, ...val };
+        }
+    }
+    return null;
+}
+
 const DEFAULT_SYSTEM_USERS = [
-    { id: 'usr_admin', username: 'admin_demo', password: '1234', name: 'Administrador General', role: 'admin', active: true, created: '2026-10-01T00:00:00.000Z' },
-    { id: 'usr_super', username: 'supervisor_demo', password: '1234', name: 'Supervisor de Turno', role: 'supervisor', active: true, created: '2026-10-01T00:00:00.000Z' },
-    { id: 'usr_caja', username: 'caja_demo', password: '1234', name: 'Cajero Punto de Venta', role: 'cajero', active: true, created: '2026-10-01T00:00:00.000Z' },
-    { id: 'usr_fin', username: 'finanzas_demo', password: '1234', name: 'Analista Financiero', role: 'analista', active: true, created: '2026-10-01T00:00:00.000Z' },
-    { id: 'usr_almacen', username: 'almacen_demo', password: '1234', name: 'Encargado de Almacén', role: 'almacen', active: true, created: '2026-10-01T00:00:00.000Z' }
+    { id: 'usr_admin', username: 'admin_demo', email: 'admin@cfocopilot.com', password: '1234', name: 'Administrador General', role: 'admin', active: true, created: '2026-10-01T00:00:00.000Z' },
+    { id: 'usr_super', username: 'supervisor_demo', email: 'supervisor@cfocopilot.com', password: '1234', name: 'Supervisor de Turno', role: 'supervisor', active: true, created: '2026-10-01T00:00:00.000Z' },
+    { id: 'usr_caja', username: 'caja_demo', email: 'cajero@cfocopilot.com', password: '1234', name: 'Cajero Punto de Venta', role: 'cajero', active: true, created: '2026-10-01T00:00:00.000Z' },
+    { id: 'usr_fin', username: 'finanzas_demo', email: 'analista@cfocopilot.com', password: '1234', name: 'Analista Financiero', role: 'analista', active: true, created: '2026-10-01T00:00:00.000Z' },
+    { id: 'usr_almacen', username: 'almacen_demo', email: 'almacen@cfocopilot.com', password: '1234', name: 'Encargado de Almacén', role: 'almacen', active: true, created: '2026-10-01T00:00:00.000Z' }
 ];
-
-
 
 let currentUser = null;
 let systemUsers = [];
 let currentUsersSubSection = 'users';
-
 
 function hasPermission(permission){
     if(!currentUser || !currentUser.active) return false;
@@ -50,8 +70,8 @@ function hasPermission(permission){
     return perms ? perms.includes(permission) : false;
 }
 
+// ===== INICIALIZACIÓN DE AUTENTICACIÓN CON FIREBASE =====
 async function initAuthAndUsers(){
-    // Esperar sincronización del servicio modular de Firebase si está inicializando
     if (!window.FirebaseService) {
         await new Promise(resolve => {
             window.addEventListener('firebase-initialized', resolve, { once: true });
@@ -59,7 +79,7 @@ async function initAuthAndUsers(){
         });
     }
 
-    // 1. Cargar o sembrar usuarios en Firestore colección 'users'
+    // 1. Cargar usuarios desde Cloud Firestore 'users'
     try {
         if (window.FirebaseService && window.FirebaseService.users) {
             await window.FirebaseService.users.seedIfEmpty(DEFAULT_SYSTEM_USERS);
@@ -77,7 +97,7 @@ async function initAuthAndUsers(){
         systemUsers = JSON.parse(JSON.stringify(DEFAULT_SYSTEM_USERS));
     }
 
-    // 2. Cargar solicitudes de cancelación desde Firestore colección 'stats'
+    // 2. Cargar solicitudes de cancelación desde 'stats'
     try {
         if (window.FirebaseService && window.FirebaseService.stats) {
             cancelRequests = await window.FirebaseService.stats.getCancelRequests();
@@ -86,7 +106,7 @@ async function initAuthAndUsers(){
         cancelRequests = [];
     }
 
-    // 3. Cargar bitácora de actividad desde Firestore colección 'stats'
+    // 3. Cargar bitácora desde 'stats'
     try {
         if (window.FirebaseService && window.FirebaseService.stats) {
             activityLog = await window.FirebaseService.stats.getActivityLog();
@@ -95,151 +115,363 @@ async function initAuthAndUsers(){
         activityLog = [];
     }
 
-    // 4. Suscribir listener de sesión a Firebase Auth
+    // 4. Suscribir listener de sesión permanente a Firebase Auth
     if (window.FirebaseService && window.FirebaseService.authModule) {
         window.FirebaseService.authModule.onAuthStateChanged(async (firebaseUser) => {
             if (firebaseUser) {
                 const email = (firebaseUser.email || '').toLowerCase();
-                let found = systemUsers.find(u => (u.email && u.email.toLowerCase() === email) || u.uid === firebaseUser.uid || u.id === firebaseUser.uid);
-                if (!found && email) {
-                    const demoUsername = Object.keys(DEMO_USER_EMAILS || {}).find(k => DEMO_USER_EMAILS[k].toLowerCase() === email);
-                    if (demoUsername) {
-                        found = systemUsers.find(u => u.username === demoUsername);
-                    }
+                let found = (systemUsers || []).find(u => 
+                    (u.email && u.email.toLowerCase() === email) || 
+                    u.uid === firebaseUser.uid || 
+                    u.id === firebaseUser.uid
+                );
+
+                if (!found && window.FirebaseService.users) {
+                    found = await window.FirebaseService.users.getById(firebaseUser.uid);
+                    if (found) systemUsers.push(found);
                 }
+
+                if (found && found.active === false) {
+                    await window.FirebaseService.authModule.logout();
+                    currentUser = null;
+                    showAuthError('Esta cuenta ha sido desactivada por el Administrador.');
+                    applyRoleUI();
+                    return;
+                }
+
                 if (!found) {
                     found = {
                         id: firebaseUser.uid,
                         uid: firebaseUser.uid,
                         username: email.split('@')[0],
-                        name: firebaseUser.displayName || email,
+                        name: firebaseUser.displayName || email.split('@')[0],
                         email: email,
                         role: 'cajero',
+                        roleLabel: 'Cajero Punto de Venta',
                         active: true,
                         created: new Date().toISOString()
                     };
                     systemUsers.push(found);
                     if (window.FirebaseService.users) await window.FirebaseService.users.saveUser(found);
                 }
-                currentUser = (found && found.active) ? found : null;
+
+                currentUser = found;
+                hideAuthModal();
+                goTo('menu');
             } else {
                 currentUser = null;
-                if (DEMO_MODE) {
-                    currentUser = systemUsers.find(u => u.username === 'admin_demo') || systemUsers[0];
-                }
+                showAuthModal('login');
             }
             applyRoleUI();
             updateMenuIndicators();
         });
     } else {
-        if (!currentUser && DEMO_MODE) {
-            currentUser = systemUsers.find(u => u.username === 'admin_demo') || systemUsers[0];
-        }
+        currentUser = null;
+        showAuthModal('login');
+        applyRoleUI();
     }
 
     applyRoleUI();
-    logActivity('Inicio de Sistema', `Sesión iniciada en Firebase con perfil: ${currentUser ? currentUser.username : 'Ninguno'}`, 'info');
 }
 
-
-
-function openRoleSwitchModal(){
-    const modal = document.getElementById('role-switch-modal');
+// ===== MANEJO DE MODALES DE AUTENTICACIÓN =====
+function showAuthModal(initialTab = 'login'){
+    const modal = document.getElementById('login-modal');
     if(modal){
         modal.classList.remove('hidden');
+        switchAuthTab(initialTab);
         if(window.lucide && typeof lucide.createIcons === 'function') lucide.createIcons();
     }
 }
 
-function closeRoleSwitchModal(){
-    const modal = document.getElementById('role-switch-modal');
+function hideAuthModal(){
+    const modal = document.getElementById('login-modal');
     if(modal) modal.classList.add('hidden');
 }
 
+// Prevenir cierre del modal sin sesión activa (Gatekeeper)
 function closeLoginModal(){
-    const modal = document.getElementById('login-modal');
-    if(modal) modal.classList.add('hidden');
     if(!currentUser){
-        switchDemoUser('admin_demo');
+        showGlobalToast('Acceso restringido: debes iniciar sesión o registrarte con un código válido para acceder.', 'warn');
+        return;
+    }
+    hideAuthModal();
+}
+
+function switchAuthTab(tab){
+    const tabLogin = document.getElementById('tab-btn-login');
+    const tabRegister = document.getElementById('tab-btn-register');
+    const formLogin = document.getElementById('auth-form-login');
+    const formRegister = document.getElementById('auth-form-register');
+    const errBox = document.getElementById('login-error');
+    if (errBox) errBox.classList.add('hidden');
+
+    if (tab === 'register') {
+        if (tabLogin) tabLogin.className = 'flex-1 py-2 text-xs font-semibold text-slate-400 hover:text-white rounded-lg transition flex items-center justify-center gap-1.5';
+        if (tabRegister) tabRegister.className = 'flex-1 py-2 text-xs font-bold text-white bg-sky-600 rounded-lg shadow-md shadow-sky-600/30 transition flex items-center justify-center gap-1.5';
+        if (formLogin) formLogin.classList.add('hidden');
+        if (formRegister) formRegister.classList.remove('hidden');
+    } else {
+        if (tabLogin) tabLogin.className = 'flex-1 py-2 text-xs font-bold text-white bg-sky-600 rounded-lg shadow-md shadow-sky-600/30 transition flex items-center justify-center gap-1.5';
+        if (tabRegister) tabRegister.className = 'flex-1 py-2 text-xs font-semibold text-slate-400 hover:text-white rounded-lg transition flex items-center justify-center gap-1.5';
+        if (formLogin) formLogin.classList.remove('hidden');
+        if (formRegister) formRegister.classList.add('hidden');
+    }
+    if (window.lucide && typeof lucide.createIcons === 'function') lucide.createIcons();
+}
+
+function onAccessCodeInput(){
+    const input = document.getElementById('reg-access-code');
+    const preview = document.getElementById('reg-role-preview');
+    if (!input || !preview) return;
+
+    const val = input.value;
+    const resolved = resolveAccessCode(val);
+
+    if (resolved) {
+        preview.classList.remove('hidden');
+        preview.className = 'mt-2 p-2 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 text-[11px] flex items-center justify-between';
+        preview.innerHTML = `
+            <div class="flex items-center gap-1.5">
+                <i data-lucide="shield-check" class="w-4 h-4 text-emerald-400 shrink-0"></i>
+                <span>Código válido: <b>${resolved.label}</b></span>
+            </div>
+            <span class="pill badge-role-${resolved.role} text-[9px] uppercase font-bold">${resolved.role}</span>
+        `;
+    } else if (val.trim().length >= 4) {
+        preview.classList.remove('hidden');
+        preview.className = 'mt-2 p-2 rounded-xl bg-rose-500/15 border border-rose-500/30 text-rose-300 text-[11px] flex items-center gap-1.5';
+        preview.innerHTML = `
+            <i data-lucide="shield-alert" class="w-4 h-4 text-rose-400 shrink-0"></i>
+            <span>Código no reconocido. Consulta con administración.</span>
+        `;
+    } else {
+        preview.classList.add('hidden');
+    }
+    if (window.lucide && typeof lucide.createIcons === 'function') lucide.createIcons();
+}
+
+function showAuthError(msg){
+    const errBox = document.getElementById('login-error');
+    const errMsg = document.getElementById('login-error-msg');
+    if (errBox && errMsg) {
+        errMsg.textContent = msg;
+        errBox.classList.remove('hidden');
+    } else {
+        alert(msg);
+    }
+    if (window.lucide && typeof lucide.createIcons === 'function') lucide.createIcons();
+}
+
+// ===== REGISTRO DE NUEVO USUARIO CON CÓDIGO DE ACCESO =====
+async function handleRegisterForm(event){
+    event.preventDefault();
+    const errBox = document.getElementById('login-error');
+    if (errBox) errBox.classList.add('hidden');
+
+    const name = (document.getElementById('reg-name')?.value || '').trim();
+    const email = (document.getElementById('reg-email')?.value || '').trim().toLowerCase();
+    const pass = document.getElementById('reg-password')?.value || '';
+    const passConfirm = document.getElementById('reg-password-confirm')?.value || '';
+    const code = (document.getElementById('reg-access-code')?.value || '').trim();
+    const btnSubmit = document.getElementById('btn-submit-register');
+
+    if (!name || !email || !pass || !code) {
+        showAuthError('Por favor completa todos los campos del formulario.');
+        return;
+    }
+
+    if (!email.includes('@') || !email.includes('.')) {
+        showAuthError('Ingresa un correo electrónico válido (ej: usuario@empresa.com).');
+        return;
+    }
+
+    if (pass.length < 6) {
+        showAuthError('La contraseña debe tener mínimo 6 caracteres (política de seguridad de Firebase Auth).');
+        return;
+    }
+
+    if (pass !== passConfirm) {
+        showAuthError('Las contraseñas no coinciden. Por favor verifícalas.');
+        return;
+    }
+
+    const keyInfo = resolveAccessCode(code);
+    if (!keyInfo) {
+        showAuthError('Código de acceso inválido. Debes ingresar uno de los 5 códigos corporativos autorizados.');
+        return;
+    }
+
+    if (btnSubmit) {
+        btnSubmit.disabled = true;
+        btnSubmit.innerHTML = `<span class="inline-block animate-spin mr-2">⟳</span> Registrando en Firebase...`;
+    }
+
+    try {
+        if (!window.FirebaseService || !window.FirebaseService.authModule) {
+            throw new Error('Servicio de Firebase no disponible. Intenta nuevamente.');
+        }
+
+        // 1. Crear usuario en Firebase Auth
+        const authUser = await window.FirebaseService.authModule.register(email, pass, name);
+
+        // 2. Guardar perfil completo en Cloud Firestore 'users'
+        const newUser = {
+            id: authUser.uid,
+            uid: authUser.uid,
+            name: name,
+            email: email,
+            username: email.split('@')[0],
+            role: keyInfo.role,
+            roleLabel: keyInfo.label,
+            accessCodeUsed: keyInfo.code,
+            active: true,
+            created: new Date().toISOString()
+        };
+
+        if (window.FirebaseService.users) {
+            await window.FirebaseService.users.saveUser(newUser);
+        }
+
+        systemUsers.push(newUser);
+        currentUser = newUser;
+
+        // 3. Bitácora de Auditoría
+        logActivity('Nuevo Usuario Registrado', `Usuario "${name}" (${email}) registrado con rol ${keyInfo.label} mediante código de acceso ${keyInfo.code}.`, 'success');
+
+        hideAuthModal();
+        applyRoleUI();
+        updateMenuIndicators();
+        goTo('menu');
+
+        showGlobalToast(`🎉 ¡Cuenta creada con éxito! Bienvenido(a) ${name} (${keyInfo.label})`, 'success');
+    } catch (error) {
+        console.error('[Register Error]', error);
+        let msg = 'Error al registrar la cuenta.';
+        if (error.code === 'auth/email-already-in-use') {
+            msg = 'Este correo electrónico ya está registrado. Por favor inicia sesión.';
+        } else if (error.code === 'auth/invalid-email') {
+            msg = 'El formato del correo electrónico no es válido.';
+        } else if (error.code === 'auth/weak-password') {
+            msg = 'La contraseña es débil. Ingresa mínimo 6 caracteres.';
+        } else if (error.message) {
+            msg = error.message;
+        }
+        showAuthError(msg);
+    } finally {
+        if (btnSubmit) {
+            btnSubmit.disabled = false;
+            btnSubmit.innerHTML = `<i data-lucide="user-plus" class="w-4 h-4"></i>Crear Cuenta y Acceder`;
+            if (window.lucide && typeof lucide.createIcons === 'function') lucide.createIcons();
+        }
+    }
+}
+
+// ===== INICIO DE SESIÓN CON CORREO Y CONTRASEÑA =====
+async function handleLoginForm(event){
+    event.preventDefault();
+    const btnSubmit = document.getElementById('btn-submit-login');
+    const u = (document.getElementById('login-email')?.value || '').trim();
+    const p = document.getElementById('login-password')?.value || '';
+
+    if (!u || !p) {
+        showAuthError('Ingresa tu correo electrónico y contraseña.');
+        return;
+    }
+
+    if (btnSubmit) {
+        btnSubmit.disabled = true;
+        btnSubmit.innerHTML = `<span class="inline-block animate-spin mr-2">⟳</span> Validando en Firebase...`;
+    }
+
+    const success = await login(u, p);
+    if (btnSubmit) {
+        btnSubmit.disabled = false;
+        btnSubmit.innerHTML = `<i data-lucide="log-in" class="w-4 h-4"></i>Entrar al Sistema`;
+        if (window.lucide && typeof lucide.createIcons === 'function') lucide.createIcons();
     }
 }
 
 async function login(username, password){
     const errBox = document.getElementById('login-error');
-    const errMsg = document.getElementById('login-error-msg');
     if(errBox) errBox.classList.add('hidden');
 
     try {
         if (window.FirebaseService && window.FirebaseService.authModule) {
             const authUser = await window.FirebaseService.authModule.login(username, password);
             const email = (authUser.email || '').toLowerCase();
-            let user = systemUsers.find(u => (u.email && u.email.toLowerCase() === email) || u.username.toLowerCase() === username.trim().toLowerCase());
+            
+            let user = (systemUsers || []).find(u => 
+                (u.email && u.email.toLowerCase() === email) || 
+                u.uid === authUser.uid || 
+                u.id === authUser.uid
+            );
+
+            if (!user && window.FirebaseService.users) {
+                user = await window.FirebaseService.users.getById(authUser.uid);
+                if (user) systemUsers.push(user);
+            }
+
             if (!user) {
                 user = {
                     id: authUser.uid,
                     uid: authUser.uid,
-                    username: username.trim(),
-                    name: authUser.displayName || username,
+                    username: email.split('@')[0],
+                    name: authUser.displayName || email.split('@')[0],
                     email: authUser.email,
                     role: 'cajero',
-                    active: true
+                    roleLabel: 'Cajero Punto de Venta',
+                    active: true,
+                    created: new Date().toISOString()
                 };
                 systemUsers.push(user);
                 if (window.FirebaseService.users) await window.FirebaseService.users.saveUser(user);
             }
-            currentUser = user;
-        } else {
-            let user = (systemUsers || []).find(u => u.username.toLowerCase() === username.trim().toLowerCase());
-            if(!user || user.password !== password){
-                if(errBox){ errBox.classList.remove('hidden'); errMsg.textContent = 'Usuario o contraseña incorrectos.'; }
+
+            if (!user.active) {
+                await window.FirebaseService.authModule.logout();
+                currentUser = null;
+                showAuthError('Esta cuenta ha sido desactivada por el Administrador.');
                 return false;
             }
+
             currentUser = user;
+        } else {
+            showAuthError('El servicio de Firebase no está conectado.');
+            return false;
         }
 
-        const modal = document.getElementById('login-modal');
-        if(modal) modal.classList.add('hidden');
-
-        logActivity('Inicio de Sesión', `Usuario "${currentUser.username}" (${currentUser.role}) autenticado con Firebase Auth.`, 'success');
+        hideAuthModal();
+        logActivity('Inicio de Sesión', `Usuario "${currentUser.name}" (${currentUser.role}) inició sesión con Firebase Auth.`, 'success');
         applyRoleUI();
         updateMenuIndicators();
+        goTo('menu');
 
-        const roleLabels = { admin: 'Administrador', supervisor: 'Supervisor', cajero: 'Cajero', analista: 'Analista', almacen: 'Almacén' };
+        const roleLabels = { admin: 'Administrador General', supervisor: 'Supervisor Operativo', cajero: 'Cajero Punto de Venta', analista: 'Analista Financiero', almacen: 'Encargado de Almacén' };
         showGlobalToast(`✓ Bienvenido, ${currentUser.name} (${roleLabels[currentUser.role] || currentUser.role})`, 'success');
         if(window.lucide && typeof lucide.createIcons === 'function') lucide.createIcons();
         return true;
     } catch(error) {
         console.error('[Firebase Login Error]', error);
-        if (errBox) {
-            errBox.classList.remove('hidden');
-            if (error.code === 'auth/invalid-credential' || error.code === 'auth/wrong-password') {
-                errMsg.textContent = 'Credenciales no válidas en Firebase Auth.';
-            } else if (error.code === 'auth/user-not-found') {
-                errMsg.textContent = 'Usuario no registrado en Firebase Auth.';
-            } else {
-                errMsg.textContent = 'Error de autenticación: ' + (error.message || error.code);
-            }
+        let msg = 'Credenciales no válidas en Firebase Auth.';
+        if (error.code === 'auth/invalid-credential' || error.code === 'auth/wrong-password') {
+            msg = 'Correo electrónico o contraseña incorrectos.';
+        } else if (error.code === 'auth/user-not-found') {
+            msg = 'Usuario no registrado en Firebase Auth. Regístrate con tu código de acceso.';
+        } else if (error.code === 'auth/invalid-email') {
+            msg = 'El formato del correo electrónico no es válido.';
+        } else if (error.message) {
+            msg = error.message;
         }
+        showAuthError(msg);
         return false;
     }
 }
 
-function handleLoginForm(event){
-    event.preventDefault();
-    const u = document.getElementById('login-username').value;
-    const p = document.getElementById('login-password').value;
-    login(u, p);
-}
-
-function quickLoginDemo(demoUsername){
-    document.getElementById('login-username').value = demoUsername;
-    document.getElementById('login-password').value = '1234';
-    login(demoUsername, '1234');
-}
-
+// ===== CIERRE DE SESIÓN =====
 async function logout(){
     if(currentUser){
-        logActivity('Cierre de Sesión', `El usuario "${currentUser.username}" cerró sesión en Firebase Auth.`, 'info');
+        logActivity('Cierre de Sesión', `El usuario "${currentUser.name}" (${currentUser.email}) cerró sesión en Firebase Auth.`, 'info');
     }
     try {
         if (window.FirebaseService && window.FirebaseService.authModule) {
@@ -251,82 +483,50 @@ async function logout(){
     currentUser = null;
     sessionStorage.removeItem('cfo_current_user');
     
-    goTo('menu');
-    applyRoleUI();
-    updateMenuIndicators();
-    
-    const modal = document.getElementById('login-modal');
-    if(modal) modal.classList.remove('hidden');
-    
-    showGlobalToast('Sesión finalizada. Selecciona un usuario para ingresar.', 'info');
-    if(window.lucide && typeof lucide.createIcons === 'function') lucide.createIcons();
-}
-
-async function switchDemoUser(demoUsername){
-    if(!demoUsername) return;
-    try {
-        if (window.FirebaseService && window.FirebaseService.authModule) {
-            await window.FirebaseService.authModule.login(demoUsername, '123456');
-        }
-    } catch(e) {
-        console.warn('[Demo Switch Error, using local demo profile]', e);
-    }
-
-    let user = (systemUsers || []).find(u => u.username === demoUsername);
-    if(!user){
-        user = DEFAULT_SYSTEM_USERS.find(u => u.username === demoUsername);
-        if(user){
-            systemUsers.push(JSON.parse(JSON.stringify(user)));
-            if (window.FirebaseService && window.FirebaseService.users) {
-                window.FirebaseService.users.saveUser(user).catch(console.warn);
-            }
-        }
-    }
-    if(!user) return;
-
-    currentUser = user;
-    sessionStorage.setItem('cfo_current_user', JSON.stringify(currentUser));
-    logActivity('Cambio Rápido Demo', `Perfil alternado a: ${user.username} (${user.role})`, 'info');
-
-    const demoSelect = document.getElementById('demo-role-select');
-    if(demoSelect) demoSelect.value = demoUsername;
+    // Ocultar vistas de trabajo para proteger datos confidenciales
+    ['menu','advisor','pos'].forEach(n => {
+        const el = document.getElementById('view-' + n);
+        if(el) el.classList.add('hidden');
+    });
 
     applyRoleUI();
     updateMenuIndicators();
-
-    closeRoleSwitchModal();
-    const roleLabels = { admin: 'Administrador', supervisor: 'Supervisor', cajero: 'Cajero', analista: 'Analista', almacen: 'Almacén' };
-    showGlobalToast(`✓ Perfil activo: ${user.name} (${roleLabels[user.role] || user.role})`, 'success');
+    showAuthModal('login');
+    showGlobalToast('Sesión finalizada. Identifícate para ingresar.', 'info');
     if(window.lucide && typeof lucide.createIcons === 'function') lucide.createIcons();
 }
 
+// ===== APLICACIÓN DE INTERFAZ POR ROL (RBAC) =====
 function applyRoleUI(){
-    const bar = document.getElementById('global-session-bar');
     const loginModal = document.getElementById('login-modal');
     const uName = document.getElementById('session-user-name');
     const rPill = document.getElementById('session-role-pill');
-    const demoSelect = document.getElementById('demo-role-select');
+    const btnLogout = document.getElementById('btn-header-logout');
 
     if(!currentUser){
-        if(loginModal) loginModal.classList.remove('hidden');
+        showAuthModal('login');
         if(uName) uName.textContent = 'Sin Sesión';
         if(rPill){
             rPill.textContent = 'NO AUTENTICADO';
-            rPill.className = 'pill bg-slate-800 text-slate-500 border border-slate-700';
+            rPill.className = 'pill bg-slate-800 text-slate-500 border border-slate-700 font-bold text-[9px] uppercase';
         }
+        if(btnLogout) btnLogout.classList.add('hidden');
+        ['menu','advisor','pos'].forEach(n => {
+            const el = document.getElementById('view-' + n);
+            if(el) el.classList.add('hidden');
+        });
         return;
     }
 
-    if(loginModal) loginModal.classList.add('hidden');
-    if(uName) uName.textContent = currentUser.name;
+    hideAuthModal();
+    if(btnLogout) btnLogout.classList.remove('hidden');
+    if(uName) uName.textContent = currentUser.name || currentUser.username;
     
     if(rPill){
-        const roleLabels = { admin: 'Administrador', supervisor: 'Supervisor', cajero: 'Cajero', analista: 'Analista', almacen: 'Almacén' };
-        rPill.textContent = roleLabels[currentUser.role] || currentUser.role.toUpperCase();
+        const roleLabels = { admin: 'Administrador General', supervisor: 'Supervisor Operativo', cajero: 'Cajero Punto de Venta', analista: 'Analista Financiero', almacen: 'Encargado de Almacén' };
+        rPill.textContent = roleLabels[currentUser.role] || (currentUser.role ? currentUser.role.toUpperCase() : 'USUARIO');
         rPill.className = `pill badge-role-${currentUser.role} font-bold text-[9px] uppercase`;
     }
-
-    if(demoSelect) demoSelect.value = currentUser.username;
 
     const role = currentUser.role;
 
@@ -338,7 +538,6 @@ function applyRoleUI(){
     const pvAnalistaInfo = document.getElementById('pv-analista-info');
 
     if(role === 'cajero'){
-        // Cajero: SOLO registrar ventas y ya (sin catálogo, sin gastos, sin auditoría)
         if(ptCatalog) ptCatalog.classList.add('hidden');
         if(ptSell) ptSell.classList.remove('hidden');
         if(ptExpense) ptExpense.classList.add('hidden');
@@ -346,7 +545,6 @@ function applyRoleUI(){
         if(pvAnalistaInfo) pvAnalistaInfo.classList.add('hidden');
         showPosTab('sell');
     } else if(role === 'analista'){
-        // Analista: NO ventas, NO inventario, NO gastos, NO usuarios
         if(ptCatalog) ptCatalog.classList.add('hidden');
         if(ptSell) ptSell.classList.add('hidden');
         if(ptExpense) ptExpense.classList.add('hidden');
@@ -357,7 +555,6 @@ function applyRoleUI(){
         });
         if(pvAnalistaInfo) pvAnalistaInfo.classList.remove('hidden');
     } else if(role === 'almacen'){
-        // Almacén: SOLO catálogo e inventario (sin vender, sin gastos, sin auditoría)
         if(ptCatalog) ptCatalog.classList.remove('hidden');
         if(ptSell) ptSell.classList.add('hidden');
         if(ptExpense) ptExpense.classList.add('hidden');
@@ -399,21 +596,15 @@ function applyRoleUI(){
     const canViewStats = hasPermission('pos.stats_view');
     const canViewToday = hasPermission('pos.today_view');
     const canViewAlmacen = hasPermission('pos.almacen_view');
-    // Control de botón Asesor Financiero en POS
     const btnGotoAdv = document.getElementById('btn-pos-goto-advisor');
     const canAccessAdv = hasPermission('finance.view_analysis') || hasPermission('ai.qwen_access') || hasPermission('ai.tax_access');
     if(btnGotoAdv) btnGotoAdv.classList.toggle('hidden', !canAccessAdv);
 
-    // Cajero no debe tener acceso a estadísticas
     if(btnPosStats) btnPosStats.classList.toggle('hidden', !canViewStats);
-    // Analista no debe poder ver ventas individuales ni corte de caja
     if(btnPosToday) btnPosToday.classList.toggle('hidden', !canViewToday);
-    // Almacén ve su panel de inventario
     if(btnPosAlmacen) btnPosAlmacen.classList.toggle('hidden', !canViewAlmacen);
-
     if(syncWrap) syncWrap.classList.toggle('hidden', role === 'cajero' || role === 'almacen');
 
-    // Selección de vista por defecto según rol
     if(role === 'analista'){
         showPosViewMode('stats');
     } else if(role === 'almacen'){
@@ -434,17 +625,15 @@ function applyRoleUI(){
     if(hasPermission('users.manage')) renderUsersList();
     if(hasPermission('sales.approve_cancel')) renderCancelRequests();
     renderAuditLog();
-    lucide.createIcons();
+    if(window.lucide && typeof lucide.createIcons === 'function') lucide.createIcons();
 }
-
-
 
 function showAccessDeniedModal(customText){
     const modal = document.getElementById('access-denied-modal');
     const txt = document.getElementById('access-denied-text');
     if(txt && customText) txt.textContent = customText;
     if(modal) modal.classList.remove('hidden');
-    lucide.createIcons();
+    if(window.lucide && typeof lucide.createIcons === 'function') lucide.createIcons();
 }
 
 function closeAccessDeniedModal(){
@@ -452,9 +641,7 @@ function closeAccessDeniedModal(){
     if(modal) modal.classList.add('hidden');
 }
 
-
-
-// ===== GESTIÓN DE USUARIOS (CRUD) =====
+// ===== GESTIÓN DE USUARIOS POR EL ADMINISTRADOR (CRUD) =====
 function showUsersSubSection(subSec){
     currentUsersSubSection = subSec;
     ['users', 'requests', 'audit'].forEach(s => {
@@ -473,7 +660,7 @@ function showUsersSubSection(subSec){
     if(subSec === 'users') renderUsersList();
     if(subSec === 'requests') renderCancelRequests();
     if(subSec === 'audit') renderAuditLog();
-    lucide.createIcons();
+    if(window.lucide && typeof lucide.createIcons === 'function') lucide.createIcons();
 }
 
 async function handleCreateUserForm(event){
@@ -531,10 +718,10 @@ async function updateUserRole(userId, newRole){
     const user = systemUsers.find(u => u.id === userId);
     if(!user) return;
 
-    if(user.username === 'admin_demo' && newRole !== 'admin'){
+    if(user.role === 'admin' && newRole !== 'admin'){
         const activeAdmins = systemUsers.filter(u => u.role === 'admin' && u.active);
         if(activeAdmins.length <= 1){
-            alert('⛔ Operación bloqueada: No puedes cambiar el rol del único Administrador activo del sistema.');
+            alert('Operación bloqueada: No puedes cambiar el rol del único Administrador activo del sistema.');
             renderUsersList();
             return;
         }
@@ -546,9 +733,9 @@ async function updateUserRole(userId, newRole){
         await window.FirebaseService.users.updateRole(userId, newRole);
     }
 
-    logActivity('Rol Actualizado', `El rol de @${user.username} cambió de ${prevRole} a ${newRole} en Firestore.`, 'warn');
+    logActivity('Rol Actualizado', `El rol de @${user.username || user.email} cambió de ${prevRole} a ${newRole} en Firestore.`, 'warn');
 
-    if(currentUser && currentUser.id === userId){
+    if(currentUser && (currentUser.id === userId || currentUser.uid === userId)){
         currentUser.role = newRole;
         applyRoleUI();
     } else {
@@ -568,7 +755,7 @@ async function toggleUserActive(userId){
     if(user.role === 'admin' && user.active){
         const activeAdmins = systemUsers.filter(u => u.role === 'admin' && u.active);
         if(activeAdmins.length <= 1){
-            alert('⛔ Operación bloqueada: No puedes desactivar al único Administrador activo del sistema.');
+            alert('Operación bloqueada: No puedes desactivar al único Administrador activo del sistema.');
             renderUsersList();
             return;
         }
@@ -579,10 +766,10 @@ async function toggleUserActive(userId){
         await window.FirebaseService.users.toggleActive(userId, user.active);
     }
 
-    logActivity(user.active ? 'Usuario Activado' : 'Usuario Desactivado', `Cuenta de @${user.username} marcada como ${user.active ? 'ACTIVA' : 'INACTIVA'} en Firestore.`, user.active ? 'success' : 'danger');
+    logActivity(user.active ? 'Usuario Activado' : 'Usuario Desactivado', `Cuenta de @${user.username || user.email} marcada como ${user.active ? 'ACTIVA' : 'INACTIVA'} en Firestore.`, user.active ? 'success' : 'danger');
 
-    if(currentUser && currentUser.id === userId && !user.active){
-        alert('Tu cuenta ha sido desactivada. La sesión se cerrará.');
+    if(currentUser && (currentUser.id === userId || currentUser.uid === userId) && !user.active){
+        alert('Tu cuenta ha sido desactivada por la administración. La sesión se cerrará.');
         logout();
         return;
     }
@@ -598,7 +785,7 @@ async function resetUserPassword(userId){
     const user = systemUsers.find(u => u.id === userId);
     if(!user) return;
 
-    const newPass = prompt(`Reestablecer contraseña para "${user.name}" (@${user.username}):`, "123456");
+    const newPass = prompt(`Reestablecer contraseña para "${user.name}" (@${user.username || user.email}):`, "123456");
     if(newPass === null) return;
     if(!newPass.trim()){
         alert('La contraseña no puede estar vacía.');
@@ -609,8 +796,8 @@ async function resetUserPassword(userId){
     if (window.FirebaseService && window.FirebaseService.users) {
         await window.FirebaseService.users.resetPassword(userId, newPass.trim());
     }
-    logActivity('Clave Reestablecida', `Contraseña actualizada para @${user.username} en Firestore.`, 'warn');
-    alert(`✓ Contraseña actualizada correctamente en Cloud Firestore para @${user.username}.`);
+    logActivity('Clave Reestablecida', `Contraseña actualizada para @${user.username || user.email} en Firestore.`, 'warn');
+    alert(`✓ Contraseña actualizada correctamente en Cloud Firestore.`);
 }
 
 function renderUsersList(){
@@ -623,8 +810,11 @@ function renderUsersList(){
     const canManage = hasPermission('users.manage');
 
     container.innerHTML = systemUsers.map(u => {
-        const isSelf = currentUser && currentUser.id === u.id;
+        const isSelf = currentUser && (currentUser.id === u.id || currentUser.uid === u.uid);
         const disabledAttr = canManage ? '' : 'disabled';
+        const displayUsername = u.username || (u.email ? u.email.split('@')[0] : 'usuario');
+        const createdDate = u.created ? new Date(u.created).toLocaleDateString('es-MX') : 'Reciente';
+
         return `
         <div class="pos-row flex items-center justify-between gap-3 p-3 bg-slate-900/50 border border-slate-800 rounded-xl">
             <div class="flex-1 min-w-0">
@@ -634,7 +824,7 @@ function renderUsersList(){
                     <span class="pill badge-role-${u.role} text-[9px] uppercase font-bold">${u.role}</span>
                 </div>
                 <div class="text-[11px] text-slate-400 mono">
-                    @${u.username} · Creado: ${new Date(u.created).toLocaleDateString('es-MX')}
+                    ${u.email || '@' + displayUsername} • Creado: ${createdDate}
                 </div>
             </div>
 
@@ -661,7 +851,5 @@ function renderUsersList(){
             </div>
         </div>`;
     }).join('');
-    lucide.createIcons();
+    if(window.lucide && typeof lucide.createIcons === 'function') lucide.createIcons();
 }
-
-

@@ -120,6 +120,19 @@ export const AuthService = {
         }
     },
 
+    async register(email, password, displayName) {
+        const cleanEmail = email.trim().toLowerCase();
+        const userCredential = await createUserWithEmailAndPassword(auth, cleanEmail, password);
+        if (displayName) {
+            try {
+                await updateProfile(userCredential.user, { displayName });
+            } catch (pErr) {
+                console.warn('[Profile update error]', pErr);
+            }
+        }
+        return userCredential.user;
+    },
+
     async logout() {
         return await signOut(auth);
     },

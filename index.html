@@ -15,48 +15,31 @@
 <body class="flex flex-col h-screen overflow-hidden">
 
 <!-- ===== BARRA DE SESIÓN Y CONTROL DE ACCESO ===== -->
-<header id="global-session-bar" class="w-full flex items-center justify-between px-2 sm:px-4 text-xs shrink-0 relative z-40 bg-slate-900/95 border-b border-slate-800/80 backdrop-blur-xl overflow-x-auto">
+<header id="global-session-bar" class="w-full flex items-center justify-between px-3 sm:px-5 py-2.5 text-xs shrink-0 relative z-40 bg-slate-900/95 border-b border-slate-800/80 backdrop-blur-xl">
     <div class="flex items-center gap-2 sm:gap-3">
         <div class="flex items-center gap-2 cursor-pointer hover:opacity-90 transition" onclick="goTo('menu')" title="Ir al Menú Principal">
             <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
             <span class="font-bold text-white tracking-wide text-[13px]">CFO Copilot</span>
             <span class="pill bg-slate-800 text-slate-400 border border-slate-700 text-[9px] font-mono">RBAC v2.5</span>
-            <span id="firebase-status-pill" class="pill bg-amber-500/15 text-amber-300 border border-amber-500/30 text-[9px] flex items-center gap-1 font-mono"><i data-lucide="flame" class="w-3 h-3 text-amber-400"></i>Firebase Cloud</span>
+            <span id="firebase-status-pill" class="pill bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 text-[9px] flex items-center gap-1 font-mono"><i data-lucide="flame" class="w-3 h-3 text-amber-400"></i>Firebase Cloud</span>
         </div>
-        <div class="h-4 w-[1px] bg-slate-700/60 mx-0.5 sm:mx-1"></div>
+        <div class="h-4 w-[1px] bg-slate-700/60 mx-1"></div>
         <div id="session-user-badge" class="flex items-center gap-1.5 sm:gap-2">
             <span class="text-slate-400 text-[11px] hidden md:inline">Usuario:</span>
-            <span id="session-user-name" class="font-semibold text-white text-[11.5px]">Administrador General</span>
-            <span id="session-role-pill" onclick="openRoleSwitchModal()" class="pill badge-role-admin font-bold text-[9px] uppercase cursor-pointer hover:opacity-85 transition" title="Clic para alternar rol">Administrador</span>
+            <span id="session-user-name" class="font-semibold text-white text-[11.5px]">Sin Sesión</span>
+            <span id="session-role-pill" class="pill bg-slate-800 text-slate-500 border border-slate-700 font-bold text-[9px] uppercase">NO AUTENTICADO</span>
         </div>
     </div>
     
-    <div class="flex items-center gap-2 sm:gap-2.5">
-        <!-- Botón Salir al Menú Principal (se muestra al estar dentro de POS o Asesor) -->
-        <button id="btn-header-back-menu" onclick="goTo('menu')" class="hidden flex items-center gap-1 px-2.5 py-1 rounded-lg bg-slate-800/90 hover:bg-slate-700 border border-slate-700/80 text-slate-200 text-[11px] font-semibold transition" title="Volver al Menú Principal">
+    <div class="flex items-center gap-2">
+        <!-- Botón Salir al Menú Principal -->
+        <button id="btn-header-back-menu" onclick="goTo('menu')" class="hidden flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-slate-800/90 hover:bg-slate-700 border border-slate-700/80 text-slate-200 text-[11px] font-semibold transition" title="Volver al Menú Principal">
             <i data-lucide="home" class="w-3.5 h-3.5 text-sky-400"></i><span class="hidden sm:inline">Menú</span>
         </button>
 
-        <!-- Selector y Botón de Modo Demo -->
-        <div id="demo-switcher-wrap" class="flex items-center gap-1.5 bg-slate-800/90 border border-slate-700/80 rounded-xl px-2 py-1 shadow-sm">
-            <button onclick="openRoleSwitchModal()" type="button" class="text-[9.5px] font-bold uppercase tracking-wider text-amber-400 hover:text-amber-300 flex items-center gap-1 transition" title="Abrir selector visual de roles">
-                <i data-lucide="users" class="w-3.5 h-3.5 text-amber-400"></i><span class="hidden md:inline">Modo Demo:</span><span class="md:hidden">Rol:</span>
-            </button>
-            <select id="demo-role-select" onchange="switchDemoUser(this.value)" class="bg-slate-900 border border-slate-700/90 rounded-lg text-white text-[11px] font-medium px-2 py-0.5 outline-none focus:border-amber-400 transition cursor-pointer max-w-[160px] sm:max-w-none">
-                <option value="admin_demo">👑 Admin (Acceso Total)</option>
-                <option value="supervisor_demo">🛡️ Supervisor (Operación)</option>
-                <option value="caja_demo">🛒 Cajero (Ventas)</option>
-                <option value="finanzas_demo">📈 Analista (IA & Métricas)</option>
-                <option value="almacen_demo">📦 Almacén (Catálogo)</option>
-            </select>
-            <button onclick="openRoleSwitchModal()" type="button" class="p-1 rounded-md bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/30 text-amber-300 transition" title="Ver panel con los 5 roles">
-                <i data-lucide="layout-grid" class="w-3 h-3"></i>
-            </button>
-        </div>
-
-        <!-- Botón Salir / Cerrar Sesión -->
-        <button id="btn-header-logout" onclick="logout()" class="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-rose-500/15 hover:bg-rose-500/25 border border-rose-500/30 text-rose-300 font-semibold text-[11px] transition shadow-sm" title="Cerrar sesión actual o cambiar credenciales">
-            <i data-lucide="log-out" class="w-3.5 h-3.5"></i><span>Salir</span>
+        <!-- Botón Cerrar Sesión Segura -->
+        <button id="btn-header-logout" onclick="logout()" class="hidden flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-rose-500/15 hover:bg-rose-500/25 border border-rose-500/30 text-rose-300 text-[11px] font-semibold transition shadow-sm" title="Cerrar Sesión Activa">
+            <i data-lucide="log-out" class="w-3.5 h-3.5 text-rose-400"></i><span class="hidden sm:inline">Cerrar Sesión</span>
         </button>
     </div>
 </header>
@@ -397,63 +380,111 @@
 </div>
 
 <!-- ===== MODAL DE LOGIN ===== -->
-<div id="login-modal" class="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-xl flex items-center justify-center p-4 hidden">
-    <div class="glass w-full max-w-md rounded-2xl border border-slate-700/60 p-6 shadow-2xl relative text-left">
-        <button onclick="closeLoginModal()" type="button" class="absolute top-4 right-4 p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition" title="Cerrar modal de acceso">
-            <i data-lucide="x" class="w-4 h-4"></i>
-        </button>
-        <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-sky-400 to-indigo-600 flex items-center justify-center mx-auto mb-4 shadow-lg shadow-sky-600/30">
-            <i data-lucide="shield-check" class="text-white w-6 h-6"></i>
-        </div>
-        <h3 class="text-lg font-bold text-white text-center mb-1">Inicio de Sesión — CFO Copilot</h3>
-        <p class="text-xs text-slate-400 text-center mb-5">Ingresa tus credenciales para acceder a la plataforma.</p>
-        
-        <div id="login-error" class="hidden mb-4 p-2.5 rounded-xl bg-rose-500/15 border border-rose-500/30 text-rose-300 text-xs flex items-center gap-2">
-            <i data-lucide="alert-circle" class="w-4 h-4 shrink-0"></i>
-            <span id="login-error-msg">Credenciales incorrectas.</span>
+<!-- ===== MODAL DE ACCESO Y REGISTRO SEGURO (BLOQUEANTE) ===== -->
+<div id="login-modal" class="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-2xl flex items-center justify-center p-3 sm:p-4 overflow-y-auto hidden">
+    <div class="glass w-full max-w-md rounded-2xl border border-slate-700/70 p-5 sm:p-7 shadow-2xl relative text-left my-auto">
+        <!-- Logo Corporativo y Encabezado de Seguridad -->
+        <div class="flex items-center gap-3 mb-4 pb-4 border-b border-slate-800/80">
+            <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-sky-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-sky-600/30 shrink-0">
+                <i data-lucide="shield-check" class="text-white w-6 h-6"></i>
+            </div>
+            <div>
+                <h3 class="text-base sm:text-lg font-bold text-white tracking-wide">CFO Copilot — Acceso Seguro</h3>
+                <p class="text-xs text-slate-400">Portal Corporativo de Control Financiero y POS</p>
+            </div>
         </div>
 
-        <form onsubmit="handleLoginForm(event)" class="space-y-3.5">
+        <!-- Selector de Pestañas: Iniciar Sesión / Registrarse -->
+        <div class="flex p-1 bg-slate-900/90 border border-slate-800 rounded-xl mb-4">
+            <button id="tab-btn-login" onclick="switchAuthTab('login')" type="button" class="flex-1 py-2 text-xs font-bold text-white bg-sky-600 rounded-lg shadow-md shadow-sky-600/30 transition flex items-center justify-center gap-1.5">
+                <i data-lucide="log-in" class="w-3.5 h-3.5"></i> Iniciar Sesión
+            </button>
+            <button id="tab-btn-register" onclick="switchAuthTab('register')" type="button" class="flex-1 py-2 text-xs font-semibold text-slate-400 hover:text-white rounded-lg transition flex items-center justify-center gap-1.5">
+                <i data-lucide="user-plus" class="w-3.5 h-3.5"></i> Registrarse con Código
+            </button>
+        </div>
+
+        <!-- Caja de Errores Global -->
+        <div id="login-error" class="hidden mb-4 p-3 rounded-xl bg-rose-500/15 border border-rose-500/30 text-rose-300 text-xs flex items-start gap-2.5">
+            <i data-lucide="alert-circle" class="w-4 h-4 shrink-0 text-rose-400 mt-0.5"></i>
+            <span id="login-error-msg" class="leading-relaxed">Error en las credenciales.</span>
+        </div>
+
+        <!-- FORMULARIO 1: INICIO DE SESIÓN -->
+        <form id="auth-form-login" onsubmit="handleLoginForm(event)" class="space-y-3.5">
             <div>
-                <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Usuario</label>
-                <input id="login-username" class="pos-input" placeholder="ej: admin_demo o caja_demo" required autocomplete="username">
+                <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Correo Electrónico</label>
+                <div class="relative">
+                    <input id="login-email" type="email" class="pos-input pl-9" placeholder="ej: usuario@empresa.com" required autocomplete="email">
+                    <i data-lucide="mail" class="w-4 h-4 text-slate-500 absolute left-3 top-3"></i>
+                </div>
             </div>
             <div>
                 <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Contraseña</label>
-                <input id="login-password" type="password" class="pos-input" placeholder="••••" required autocomplete="current-password">
+                <div class="relative">
+                    <input id="login-password" type="password" class="pos-input pl-9" placeholder="••••••••" required autocomplete="current-password">
+                    <i data-lucide="lock" class="w-4 h-4 text-slate-500 absolute left-3 top-3"></i>
+                </div>
             </div>
-            <button type="submit" class="pos-btn bg-gradient-to-r from-sky-600 to-indigo-600 hover:from-sky-500 hover:to-indigo-500 text-white w-full justify-center py-2.5 text-sm font-semibold shadow-lg shadow-sky-600/20 mt-2">
-                <i data-lucide="log-in" class="w-4 h-4"></i>Entrar al Sistema
+            <button id="btn-submit-login" type="submit" class="pos-btn bg-gradient-to-r from-sky-600 to-indigo-600 hover:from-sky-500 hover:to-indigo-500 text-white w-full justify-center py-2.5 text-sm font-semibold shadow-lg shadow-sky-600/25 mt-1">
+                <i data-lucide="log-in" class="w-4 h-4"></i> Entrar al Sistema
             </button>
+            <div class="text-center pt-2">
+                <button onclick="switchAuthTab('register')" type="button" class="text-xs text-sky-400 hover:text-sky-300 hover:underline transition">
+                    ¿No tienes una cuenta aún? <b>Regístrate aquí</b>
+                </button>
+            </div>
         </form>
 
-        <!-- Accesos Demo Rápidos para la Presentación de Clase -->
-        <div class="mt-6 pt-5 border-t border-slate-800">
-            <div class="text-[10px] uppercase font-bold tracking-wider text-amber-400 mb-2 flex items-center gap-1.5">
-                <i data-lucide="flask-conical" class="w-3.5 h-3.5"></i>Accesos Rápidos Demo (Clave: 1234)
+        <!-- FORMULARIO 2: REGISTRO CON CÓDIGO DE ACCESO -->
+        <form id="auth-form-register" onsubmit="handleRegisterForm(event)" class="space-y-3 hidden">
+            <div>
+                <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Nombre Completo</label>
+                <div class="relative">
+                    <input id="reg-name" type="text" class="pos-input pl-9" placeholder="ej: Carlos González" required autocomplete="name">
+                    <i data-lucide="user" class="w-4 h-4 text-slate-500 absolute left-3 top-3"></i>
+                </div>
             </div>
-            <div class="grid grid-cols-2 gap-2 text-left">
-                <button onclick="quickLoginDemo('admin_demo')" type="button" class="p-2 rounded-xl bg-purple-500/10 hover:bg-purple-500/20 border border-purple-500/30 text-purple-300 text-[11px] transition text-left">
-                    <b class="block text-white">👑 Admin</b>admin_demo
-                </button>
-                <button onclick="quickLoginDemo('supervisor_demo')" type="button" class="p-2 rounded-xl bg-sky-500/10 hover:bg-sky-500/20 border border-sky-500/30 text-sky-300 text-[11px] transition text-left">
-                    <b class="block text-white">🛡️ Supervisor</b>supervisor_demo
-                </button>
-                <button onclick="quickLoginDemo('caja_demo')" type="button" class="p-2 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 text-emerald-300 text-[11px] transition text-left">
-                    <b class="block text-white">🛒 Cajero</b>caja_demo
-                </button>
-                <button onclick="quickLoginDemo('finanzas_demo')" type="button" class="p-2 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-amber-300 text-[11px] transition text-left">
-                    <b class="block text-white">📈 Analista</b>finanzas_demo
-                </button>
-                <button onclick="quickLoginDemo('almacen_demo')" type="button" class="col-span-2 p-2 rounded-xl bg-teal-500/10 hover:bg-teal-500/20 border border-teal-500/30 text-teal-300 text-[11px] transition text-left flex items-center justify-between">
-                    <div><b class="text-white">📦 Encargado de Almacén</b>almacen_demo</div>
-                    <span class="pill bg-teal-500/20 text-teal-300 border border-teal-500/30 text-[9px]">Catálogo & Stock</span>
+            <div>
+                <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Correo Electrónico</label>
+                <div class="relative">
+                    <input id="reg-email" type="email" class="pos-input pl-9" placeholder="ej: carlos@empresa.com" required autocomplete="email">
+                    <i data-lucide="mail" class="w-4 h-4 text-slate-500 absolute left-3 top-3"></i>
+                </div>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                <div>
+                    <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Contraseña</label>
+                    <input id="reg-password" type="password" class="pos-input" placeholder="Mínimo 6 carácteres" required autocomplete="new-password">
+                </div>
+                <div>
+                    <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Confirmar</label>
+                    <input id="reg-password-confirm" type="password" class="pos-input" placeholder="Repite contraseña" required autocomplete="new-password">
+                </div>
+            </div>
+            <div>
+                <label class="block text-[10px] font-bold uppercase tracking-wider text-amber-400 mb-1 flex items-center justify-between">
+                    <span class="flex items-center gap-1"><i data-lucide="key" class="w-3.5 h-3.5"></i> Código de Acceso de Área / Rol</span>
+                    <span class="text-[9px] text-slate-500 font-normal">Requerido</span>
+                </label>
+                <input id="reg-access-code" oninput="onAccessCodeInput()" type="text" class="pos-input uppercase font-mono tracking-wider text-amber-300 font-bold border-amber-500/40 focus:border-amber-400" placeholder="ej: ADMIN-8367 o CAJA-1098" required autocomplete="off">
+                <!-- Preview dinámico del rol validado -->
+                <div id="reg-role-preview" class="hidden"></div>
+                <p class="text-[10px] text-slate-400 mt-1 leading-tight">
+                    Introduce el código corporativo provisto por la dirección para activar tu perfil con los permisos correspondientes.
+                </p>
+            </div>
+            <button id="btn-submit-register" type="submit" class="pos-btn bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white w-full justify-center py-2.5 text-sm font-semibold shadow-lg shadow-emerald-600/25 mt-1">
+                <i data-lucide="user-plus" class="w-4 h-4"></i> Crear Cuenta y Acceder
+            </button>
+            <div class="text-center pt-2">
+                <button onclick="switchAuthTab('login')" type="button" class="text-xs text-slate-400 hover:text-white hover:underline transition">
+                    ¿Ya tienes una cuenta registrada? <b>Inicia sesión aquí</b>
                 </button>
             </div>
-        </div>
+        </form>
     </div>
 </div>
-
 <!-- ===== MODAL DE ACCESO DENEGADO ===== -->
 <div id="access-denied-modal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 hidden">
     <div class="glass w-full max-w-sm rounded-2xl border border-rose-500/40 p-6 shadow-2xl text-center">

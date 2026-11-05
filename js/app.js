@@ -3,6 +3,11 @@
 // ===== NAVIGATION =====
 let posViewMode = 'today';
 function goTo(v){
+    // 0. Bloqueo estricto si no hay sesión activa
+    if (!currentUser) {
+        if (typeof showAuthModal === 'function') showAuthModal('login');
+        return;
+    }
     // 1. Verificación de Seguridad y Permisos por Pantalla
     if(v === 'advisor'){
         const canAccessAdvisor = hasPermission('finance.view_analysis') || hasPermission('ai.qwen_access') || hasPermission('ai.tax_access');
