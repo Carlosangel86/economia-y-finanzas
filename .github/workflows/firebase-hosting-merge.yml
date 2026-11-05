@@ -10,6 +10,7 @@ on:
   push:
     branches:
       - main
+  workflow_dispatch:
 
 permissions:
   checks: write
@@ -23,10 +24,38 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Deploy to Firebase Hosting
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Validate Service Account Secret
+        run: |
+          SECRET_VAL="${{ secrets.FIREBASE_SERVICE_ACCOUNT_ASESOR_FINANCIERO_83679 || secrets.FIREBASE_SERVICE_ACCOUNT || secrets.FIREBASE_SERVICE_ACCOUNT_KEY }}"
+          if [ -z "$SECRET_VAL" ]; then
+            echo "::error::El secreto de la cuenta de servicio de Firebase no fue encontrado en GitHub Secrets. Revisa que en Settings > Secrets and variables > Actions exista FIREBASE_SERVICE_ACCOUNT_ASESOR_FINANCIERO_83679 o FIREBASE_SERVICE_ACCOUNT."
+            exit 1
+          fi
+          echo "✓ Secreto de cuenta de servicio de Firebase detectado correctamente."
+
+      - name: Deploy to Firebase Hosting via Action
         uses: FirebaseExtended/action-hosting-deploy@v0
+        id: action_deploy
+        continue-on-error: true
         with:
           repoToken: ${{ secrets.GITHUB_TOKEN }}
-          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_ASESOR_FINANCIERO_83679 }}
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_ASESOR_FINANCIERO_83679 || secrets.FIREBASE_SERVICE_ACCOUNT || secrets.FIREBASE_SERVICE_ACCOUNT_KEY }}
           channelId: live
           projectId: asesor-financiero-83679
+
+      - name: Fallback Direct Deploy with Firebase CLI
+        if: steps.action_deploy.outcome == 'failure'
+        env:
+          FIREBASE_SA: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_ASESOR_FINANCIERO_83679 || secrets.FIREBASE_SERVICE_ACCOUNT || secrets.FIREBASE_SERVICE_ACCOUNT_KEY }}
+        run: |
+          echo "Iniciando despliegue directo con Firebase CLI..."
+          echo "$FIREBASE_SA" > ./sa_key.json
+          export GOOGLE_APPLICATION_CREDENTIALS="$(pwd)/sa_key.json"
+          npx --yes firebase-tools deploy --only hosting --project asesor-financiero-83679 --non-interactive
+          rm -f ./sa_key.json
+          echo "✓ Despliegue con Firebase CLI completado exitosamente."
