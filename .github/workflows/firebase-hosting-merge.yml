@@ -14,7 +14,7 @@ on:
 
 permissions:
   checks: write
-  contents: read
+  contents: write
   deployments: write
 
 jobs:
@@ -38,21 +38,23 @@ jobs:
       - name: Deploy to Firebase Hosting
         id: deploy
         run: |
-          echo "### 🚀 Diagnóstico y Despliegue en Firebase Hosting" >> $GITHUB_STEP_SUMMARY
           set +e
-          npx --yes firebase-tools deploy --only hosting --project asesor-financiero-83679 --debug > deploy.log 2>&1
+          echo "Iniciando despliegue en Firebase Hosting..."
+          npx --yes firebase-tools@13.29.1 deploy --only hosting --project asesor-financiero-83679 --debug > /tmp/deploy.log 2>&1
           STATUS=$?
-          cat deploy.log
-          echo "" >> $GITHUB_STEP_SUMMARY
+          cat /tmp/deploy.log
+          
           if [ $STATUS -eq 0 ]; then
-            echo "✅ **Despliegue exitoso en Firebase Hosting**" >> $GITHUB_STEP_SUMMARY
-            echo "- 🌐 URL en vivo: https://asesor-financiero-83679.web.app" >> $GITHUB_STEP_SUMMARY
-            echo "- 🌐 Dominio alternativo: https://asesor-financiero-83679.firebaseapp.com" >> $GITHUB_STEP_SUMMARY
+            echo "::notice title=Despliegue Exitoso::Firebase Hosting ha sido desplegado exitosamente."
+            echo "### ✅ ¡Despliegue Exitoso en Firebase Hosting!" >> $GITHUB_STEP_SUMMARY
+            echo "- 🌐 **URL en Vivo:** [https://asesor-financiero-83679.web.app](https://asesor-financiero-83679.web.app)" >> $GITHUB_STEP_SUMMARY
+            echo "- 🌐 **Dominio Alternativo:** [https://asesor-financiero-83679.firebaseapp.com](https://asesor-financiero-83679.firebaseapp.com)" >> $GITHUB_STEP_SUMMARY
           else
-            echo "❌ **El despliegue falló con código de salida: $STATUS**" >> $GITHUB_STEP_SUMMARY
-            echo "#### Diagnóstico de error en Firebase CLI:" >> $GITHUB_STEP_SUMMARY
+            ERR_LINE=$(grep -i "error:" /tmp/deploy.log | tail -n 5 | tr '\n' ' -- ')
+            echo "::error title=Firebase CLI Result::Exit Code $STATUS | $ERR_LINE"
+            echo "### ❌ Error en el Despliegue de Firebase Hosting" >> $GITHUB_STEP_SUMMARY
             echo '```text' >> $GITHUB_STEP_SUMMARY
-            tail -n 80 deploy.log >> $GITHUB_STEP_SUMMARY
+            tail -n 80 /tmp/deploy.log >> $GITHUB_STEP_SUMMARY
             echo '```' >> $GITHUB_STEP_SUMMARY
           fi
           exit $STATUS
