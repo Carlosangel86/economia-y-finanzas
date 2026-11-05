@@ -1,9 +1,7 @@
-// =====================================================================
-// CONTROLADOR PRINCIPAL Y NAVEGACIÓN DE LA APLICACIÓN (app.js)
-// CFO Copilot + Punto de Venta
-// =====================================================================
+// ===== NAVEGACIÓN, ORQUESTACIÓN & ARRANQUE DE LA APLICACIÓN =====
 
-// --- 1. ENRUTADOR Y CONTROLADOR DE PANTALLAS (goTo) ---
+// ===== NAVIGATION =====
+let posViewMode = 'today';
 function goTo(v){
     // 1. Verificación de Seguridad y Permisos por Pantalla
     if(v === 'advisor'){
@@ -89,6 +87,58 @@ function showPosViewMode(mode){
     lucide.createIcons();
 }
 
+function renderAlmacenDashboard(){
+    const totalProds = catalog.length;
+    const totalUnits = catalog.reduce((acc, p) => acc + (p.stock || 0), 0);
+    const lowStockProds = catalog.filter(p => (p.stock || 0) > 0 && (p.stock || 0) <= (p.rop || 5));
+    const outStockProds = catalog.filter(p => (p.stock || 0) <= 0);
+
+    const elTotP = document.getElementById('alm-total-prods');
+    const elTotU = document.getElementById('alm-total-units');
+    const elLow = document.getElementById('alm-low-stock');
+    const elOut = document.getElementById('alm-out-stock');
+
+    if(elTotP) elTotP.textContent = totalProds;
+    if(elTotU) elTotU.textContent = totalUnits;
+    if(elLow) elLow.textContent = lowStockProds.length;
+    if(elOut) elOut.textContent = outStockProds.length;
+
+    const criticalList = [...outStockProds, ...lowStockProds];
+    const critContainer = document.getElementById('alm-critical-list');
+    if(!critContainer) return;
+
+    if(criticalList.length === 0){
+        critContainer.innerHTML = '<div class="text-emerald-400 text-xs py-6 text-center font-medium">✓ Todos los productos cuentan con inventario saludable (> 5 unidades).</div>';
+    } else {
+        critContainer.innerHTML = criticalList.map(p => {
+            const isZero = (p.stock || 0) <= 0;
+            const ropThreshold = p.rop || 5;
+            const badge = isZero
+                ? `<span class="pill bg-rose-500/20 text-rose-300 border border-rose-500/35 font-bold text-[9px] flex items-center gap-1"><i data-lucide="alert-octagon" class="w-2.5 h-2.5 text-rose-400"></i>AGOTADO (0 u.)</span>`
+                : `<span class="pill bg-amber-500/20 text-amber-300 border border-amber-500/35 font-bold text-[9px] flex items-center gap-1"><i data-lucide="alert-triangle" class="w-2.5 h-2.5 text-amber-400"></i>ROP Crítico (${p.stock} <= ${ropThreshold} u.)</span>`;
+            return `
+            <div class="pos-row flex items-center justify-between p-2.5 bg-slate-900/50 border border-slate-800 rounded-xl">
+                <div class="flex-1 min-w-0">
+                    <div class="flex items-center gap-2 mb-0.5 flex-wrap">
+                        <span class="text-xs font-semibold text-white truncate">${p.name}</span>
+                        ${badge}
+                    </div>
+                    <div class="text-[10px] text-slate-400 mono">P. Venta: ${fmt(p.price)} · Existencia: <b class="${isZero ? 'text-rose-400' : 'text-amber-400'}">${p.stock || 0} u.</b> · ROP: <span class="text-sky-300">${ropThreshold} u.</span> (Lead Time: ${p.leadTime || 7}d)</div>
+                </div>
+                <button onclick="quickAddStock('${p.id}', 10)" class="pos-btn bg-teal-600 hover:bg-teal-500 text-white text-[10.5px] py-1 px-2.5 shrink-0 flex items-center gap-1">
+                    <i data-lucide="plus" class="w-3 h-3"></i>+10 u.
+                </button>
+            </div>`;
+        }).join('');
+    }
+    lucide.createIcons();
+}
+
+function syncAndGoToAdvisor(){
+    goTo('advisor');
+    syncFromPos();
+}
+
 function updateMenuIndicators(){
     const posData = getPosFinancials();
     const ind = document.getElementById('menu-pos-indicator');
@@ -144,66 +194,6 @@ function updateMenuIndicators(){
     lucide.createIcons();
 }
 
-// --- 2. CONTROLADOR DE PESTAÑAS DEL POS Y DEL ASESOR ---
-function showPosTab(t){
-    // Validación estricta de permisos por pestaña en tiempo real
-    if(t === 'sell' && !hasPermission('pos.sell')){
-        showAccessDeniedModal('Tu rol no tiene autorización para registrar ventas.');
-        return;
-    }
-    if(t === 'catalog' && !hasPermission('catalog.view') && !hasPermission('inventory.view')){
-        showAccessDeniedModal('Tu rol no tiene autorización para consultar o gestionar el catálogo.');
-        return;
-    }
-    if(t === 'expense' && !hasPermission('inventory.adjust') && !hasPermission('catalog.edit')){
-        showAccessDeniedModal('Solo Administradores y Supervisores pueden registrar gastos operativos.');
-        return;
-    }
-    if(t === 'users' && !hasPermission('users.manage') && !hasPermission('sales.approve_cancel') && !hasPermission('audit.view_limited')){
-        showAccessDeniedModal('Tu rol no tiene acceso al módulo de seguridad, usuarios o auditoría.');
-        return;
-    }
-
-    const pvAnalista = document.getElementById('pv-analista-info');
-    if(pvAnalista && currentUser.role !== 'analista') pvAnalista.classList.add('hidden');
-
-    ['catalog','sell','expense','users'].forEach(n => {
-        const el = document.getElementById('pv-' + n);
-        if(el) el.classList.toggle('hidden', n !== t);
-        const b = document.getElementById('pt-' + n);
-        if(b){
-            if(n === t){
-                b.classList.add('tab-on');
-                b.classList.remove('text-slate-500');
-            } else {
-                b.classList.remove('tab-on');
-                b.classList.add('text-slate-500');
-            }
-        }
-    });
-
-    if(t === 'sell'){
-        updateProductSelect();
-        onSellProductChange();
-        setPaymentMethod(currentPaymentMethod);
-        updatePaymentTotals();
-    }
-    if(t === 'catalog') renderCatalog();
-    if(t === 'expense') renderExpenses();
-    if(t === 'users'){
-        showUsersSubSection(currentUsersSubSection || 'users');
-    }
-    lucide.createIcons();
-}
-
-function showAdvTab(t){['dash','ratios','back','amor'].forEach(n=>{document.getElementById('v-'+n).classList.toggle('hidden',n!==t);const b=document.getElementById('t-'+n);n===t?(b.classList.add('tab-on'),b.classList.remove('text-slate-500')):(b.classList.remove('tab-on'),b.classList.add('text-slate-500'));});}
-
-// --- 3. SINCRONIZACIÓN AUTOMÁTICA POS -> ASESOR FINANCIERO ---
-function syncAndGoToAdvisor(){
-    goTo('advisor');
-    syncFromPos();
-}
-
 function checkPosData(){
     const posData=getPosFinancials();
     const banner=document.getElementById('pos-sync-banner');
@@ -233,8 +223,8 @@ function checkPosData(){
 }
 
 function getPosFinancials(){
-    const allSales = (Array.isArray(salesLog) && salesLog.length > 0) ? salesLog : [];
-    const ex = (Array.isArray(expenses) && expenses.length > 0) ? expenses : [];
+    const allSales=JSON.parse(localStorage.getItem('pos_sales')||'[]');
+    const ex=JSON.parse(localStorage.getItem('pos_expenses')||'[]');
     const sl = allSales.filter(s => s.status !== 'cancelled');
     if(sl.length===0)return null;
     // Get unique days that have sales
@@ -292,25 +282,36 @@ async function syncFromPos(){
     finally{busy=false;document.getElementById('iw').classList.remove('lock');}
 }
 
-function exportPosDB(){const db={version:'1.0.0',exported:new Date().toISOString(),catalog,sales:salesLog,expenses};dl(db,'cfo_copilot_pos_database.json');toast('pos-toast');}
 
-// --- 4. INICIALIZACIÓN Y ARRANQUE DEL SISTEMA AL CARGAR LA PÁGINA ---
-document.addEventListener('DOMContentLoaded', () => {
-    // 1. Inicializar control de acceso, usuarios y sesión
-    initAuthAndUsers();
-    
-    // 2. Inicializar gráficas operativas si están disponibles
-    if(typeof initPosChart === 'function') initPosChart();
-    if(typeof initCharts === 'function') initCharts();
-    if(typeof initHourlyChart === 'function') initHourlyChart();
-    if(typeof initRadar === 'function') initRadar();
-    
-    // 3. Renderizar catálogo inicial en el POS
-    if(typeof renderCatalog === 'function') renderCatalog();
-    if(typeof upPosSummary === 'function') upPosSummary();
-    
-    // 4. Renderizar iconos de Lucide
-    if(window.lucide && typeof lucide.createIcons === 'function') {
+
+// ===== INICIALIZACIÓN GLOBAL DEL SISTEMA CON FIREBASE =====
+async function startApp() {
+    if (window.FirebaseService) {
+        await initAuthAndUsers();
+        if (typeof initPosData === 'function') await initPosData();
+    } else {
+        window.addEventListener('firebase-initialized', async () => {
+            await initAuthAndUsers();
+            if (typeof initPosData === 'function') await initPosData();
+            if (window.lucide && typeof lucide.createIcons === 'function') {
+                lucide.createIcons();
+            }
+        }, { once: true });
+        // Fallback por si el evento ya se ejecutó
+        setTimeout(async () => {
+            if (!currentUser) {
+                await initAuthAndUsers();
+                if (typeof initPosData === 'function') await initPosData();
+            }
+        }, 1800);
+    }
+    if (window.lucide && typeof lucide.createIcons === 'function') {
         lucide.createIcons();
     }
-});
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', startApp);
+} else {
+    startApp();
+}

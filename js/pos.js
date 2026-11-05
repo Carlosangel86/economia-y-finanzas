@@ -1,282 +1,987 @@
-// =====================================================================
-// OPERACIÓN Y PUNTO DE VENTA (POS) & INVENTARIO (pos.js)
-// CFO Copilot + Punto de Venta
-// =====================================================================
+// ===== MÓDULO DE PUNTO DE VENTA (POS), CATÁLOGO & ESTADÍSTICAS =====
 
-// --- 1. CONTROL DE TURNOS Y ARQUEOS DE CAJA (CORTE X / CORTE Z) ---
-function updateShiftUI(){
-    const pill = document.getElementById('shift-status-pill');
-    const info = document.getElementById('shift-info-text');
-    const btnOpen = document.getElementById('btn-shift-open');
-    const btnCutX = document.getElementById('btn-shift-cutx');
-    const btnCutZ = document.getElementById('btn-shift-cutz');
-
-    if(!pill) return;
-
-    if(currentShift && currentShift.status === 'open'){
-        pill.className = 'pill bg-emerald-500/20 text-emerald-300 border border-emerald-500/35 text-xs font-semibold flex items-center gap-1.5';
-        pill.innerHTML = '<span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>Turno Abierto';
-        if(info) info.textContent = `Cajero: @${currentShift.cashierUsername} · Fondo: ${fmt(currentShift.initialCashFloat)} · Inicio: ${formatAppDate(currentShift.openedAt, {hour:'2-digit', minute:'2-digit'})}`;
-        if(btnOpen) btnOpen.classList.add('hidden');
-        if(btnCutX) btnCutX.classList.remove('hidden');
-        if(btnCutZ) btnCutZ.classList.remove('hidden');
-    } else {
-        pill.className = 'pill bg-slate-800 text-slate-400 border border-slate-700 text-xs font-semibold flex items-center gap-1.5';
-        pill.innerHTML = '<span class="w-2 h-2 rounded-full bg-slate-500"></span>Sin Turno Activo';
-        if(info) info.textContent = 'Abre turno con fondo de caja para registrar ventas';
-        if(btnOpen) btnOpen.classList.remove('hidden');
-        if(btnCutX) btnCutX.classList.add('hidden');
-        if(btnCutZ) btnCutZ.classList.add('hidden');
+// ===== POS MODULE =====
+const REFACCIONES_CATALOG = [
+    {
+        "id":  "ref_1",
+        "name":  "Pistón",
+        "category":  "Motor",
+        "cost":  350,
+        "price":  480,
+        "stock":  20,
+        "created":  "2026-10-14T09:40:00.000Z"
+    },
+    {
+        "id":  "ref_2",
+        "name":  "Anillos de pistón",
+        "category":  "Motor",
+        "cost":  150,
+        "price":  220,
+        "stock":  20,
+        "created":  "2026-10-14T09:40:00.000Z"
+    },
+    {
+        "id":  "ref_3",
+        "name":  "Biela",
+        "category":  "Motor",
+        "cost":  400,
+        "price":  550,
+        "stock":  15,
+        "created":  "2026-10-14T09:40:00.000Z"
+    },
+    {
+        "id":  "ref_4",
+        "name":  "Cigüeñal",
+        "category":  "Motor",
+        "cost":  2500,
+        "price":  3200,
+        "stock":  8,
+        "created":  "2026-10-14T09:40:00.000Z"
+    },
+    {
+        "id":  "ref_5",
+        "name":  "Árbol de levas",
+        "category":  "Motor",
+        "cost":  1200,
+        "price":  1600,
+        "stock":  8,
+        "created":  "2026-10-14T09:40:00.000Z"
+    },
+    {
+        "id":  "ref_6",
+        "name":  "Válvula de admisión",
+        "category":  "Motor",
+        "cost":  80,
+        "price":  120,
+        "stock":  35,
+        "created":  "2026-10-14T09:40:00.000Z"
+    },
+    {
+        "id":  "ref_7",
+        "name":  "Válvula de escape",
+        "category":  "Motor",
+        "cost":  90,
+        "price":  135,
+        "stock":  35,
+        "created":  "2026-10-14T09:40:00.000Z"
+    },
+    {
+        "id":  "ref_8",
+        "name":  "Culata (Cabeza del motor)",
+        "category":  "Motor",
+        "cost":  3500,
+        "price":  4800,
+        "stock":  4,
+        "created":  "2026-10-14T09:40:00.000Z"
+    },
+    {
+        "id":  "ref_9",
+        "name":  "Junta de culata",
+        "category":  "Motor",
+        "cost":  200,
+        "price":  350,
+        "stock":  20,
+        "created":  "2026-10-14T09:40:00.000Z"
+    },
+    {
+        "id":  "ref_10",
+        "name":  "Bloque del motor",
+        "category":  "Motor",
+        "cost":  8000,
+        "price":  11000,
+        "stock":  0,
+        "created":  "2026-10-14T09:40:00.000Z"
+    },
+    {
+        "id":  "ref_11",
+        "name":  "Cárter",
+        "category":  "Motor",
+        "cost":  600,
+        "price":  850,
+        "stock":  15,
+        "created":  "2026-10-14T09:40:00.000Z"
+    },
+    {
+        "id":  "ref_12",
+        "name":  "Bomba de aceite",
+        "category":  "Motor",
+        "cost":  450,
+        "price":  650,
+        "stock":  15,
+        "created":  "2026-10-14T09:40:00.000Z"
+    },
+    {
+        "id":  "ref_13",
+        "name":  "Filtro de aceite",
+        "category":  "Motor",
+        "cost":  60,
+        "price":  95,
+        "stock":  35,
+        "created":  "2026-10-14T09:40:00.000Z"
+    },
+    {
+        "id":  "ref_14",
+        "name":  "Bomba de agua",
+        "category":  "Motor",
+        "cost":  380,
+        "price":  550,
+        "stock":  15,
+        "created":  "2026-10-14T09:40:00.000Z"
+    },
+    {
+        "id":  "ref_15",
+        "name":  "Radiador",
+        "category":  "Motor",
+        "cost":  1200,
+        "price":  1700,
+        "stock":  8,
+        "created":  "2026-10-14T09:40:00.000Z"
+    },
+    {
+        "id":  "ref_16",
+        "name":  "Termostato",
+        "category":  "Motor",
+        "cost":  150,
+        "price":  250,
+        "stock":  20,
+        "created":  "2026-10-14T09:40:00.000Z"
+    },
+    {
+        "id":  "ref_17",
+        "name":  "Ventilador del radiador",
+        "category":  "Motor",
+        "cost":  500,
+        "price":  750,
+        "stock":  15,
+        "created":  "2026-10-14T09:40:00.000Z"
+    },
+    {
+        "id":  "ref_18",
+        "name":  "Banda de distribución",
+        "category":  "Motor",
+        "cost":  250,
+        "price":  400,
+        "stock":  20,
+        "created":  "2026-10-14T09:40:00.000Z"
+    },
+    {
+        "id":  "ref_19",
+        "name":  "Cadena de distribución",
+        "category":  "Motor",
+        "cost":  450,
+        "price":  680,
+        "stock":  15,
+        "created":  "2026-10-14T09:40:00.000Z"
+    },
+    {
+        "id":  "ref_20",
+        "name":  "Tensor de distribución",
+        "category":  "Motor",
+        "cost":  300,
+        "price":  450,
+        "stock":  20,
+        "created":  "2026-10-14T09:40:00.000Z"
+    },
+    {
+        "id":  "ref_21",
+        "name":  "Carburador",
+        "category":  "Motor",
+        "cost":  800,
+        "price":  1150,
+        "stock":  15,
+        "created":  "2026-10-14T09:40:00.000Z"
+    },
+    {
+        "id":  "ref_22",
+        "name":  "Inyector de combustible",
+        "category":  "Motor",
+        "cost":  350,
+        "price":  500,
+        "stock":  15,
+        "created":  "2026-10-14T09:40:00.000Z"
+    },
+    {
+        "id":  "ref_23",
+        "name":  "Riel de inyectores",
+        "category":  "Motor",
+        "cost":  600,
+        "price":  850,
+        "stock":  15,
+        "created":  "2026-10-14T09:40:00.000Z"
+    },
+    {
+        "id":  "ref_24",
+        "name":  "Bomba de combustible",
+        "category":  "Motor",
+        "cost":  550,
+        "price":  800,
+        "stock":  15,
+        "created":  "2026-10-14T09:40:00.000Z"
+    },
+    {
+        "id":  "ref_25",
+        "name":  "Filtro de combustible",
+        "category":  "Motor",
+        "cost":  80,
+        "price":  130,
+        "stock":  35,
+        "created":  "2026-10-14T09:40:00.000Z"
+    },
+    {
+        "id":  "ref_26",
+        "name":  "Disco de embrague (Clutch)",
+        "category":  "Transmisión",
+        "cost":  450,
+        "price":  650,
+        "stock":  15,
+        "created":  "2026-10-14T09:40:00.000Z"
+    },
+    {
+        "id":  "ref_27",
+        "name":  "Plato de presión",
+        "category":  "Transmisión",
+        "cost":  500,
+        "price":  750,
+        "stock":  15,
+        "created":  "2026-10-14T09:40:00.000Z"
+    },
+    {
+        "id":  "ref_28",
+        "name":  "Collarín de embrague",
+        "category":  "Transmisión",
+        "cost":  250,
+        "price":  380,
+        "stock":  20,
+        "created":  "2026-10-14T09:40:00.000Z"
+    },
+    {
+        "id":  "ref_29",
+        "name":  "Cable de embrague",
+        "category":  "Transmisión",
+        "cost":  120,
+        "price":  190,
+        "stock":  20,
+        "created":  "2026-10-14T09:40:00.000Z"
+    },
+    {
+        "id":  "ref_30",
+        "name":  "Cilindro maestro de embrague",
+        "category":  "Transmisión",
+        "cost":  380,
+        "price":  550,
+        "stock":  15,
+        "created":  "2026-10-14T09:40:00.000Z"
+    },
+    {
+        "id":  "ref_31",
+        "name":  "Caja de cambios",
+        "category":  "Transmisión",
+        "cost":  6000,
+        "price":  8500,
+        "stock":  2,
+        "created":  "2026-10-14T09:40:00.000Z"
+    },
+    {
+        "id":  "ref_32",
+        "name":  "Engranajes de transmisión",
+        "category":  "Transmisión",
+        "cost":  800,
+        "price":  1200,
+        "stock":  15,
+        "created":  "2026-10-14T09:40:00.000Z"
+    },
+    {
+        "id":  "ref_33",
+        "name":  "Sincronizador",
+        "category":  "Transmisión",
+        "cost":  250,
+        "price":  400,
+        "stock":  20,
+        "created":  "2026-10-14T09:40:00.000Z"
+    },
+    {
+        "id":  "ref_34",
+        "name":  "Árbol de transmisión (Cardán)",
+        "category":  "Transmisión",
+        "cost":  1800,
+        "price":  2500,
+        "stock":  8,
+        "created":  "2026-10-14T09:40:00.000Z"
+    },
+    {
+        "id":  "ref_35",
+        "name":  "Diferencial",
+        "category":  "Transmisión",
+        "cost":  3500,
+        "price":  4800,
+        "stock":  4,
+        "created":  "2026-10-14T09:40:00.000Z"
+    },
+    {
+        "id":  "ref_36",
+        "name":  "Eje (Palier)",
+        "category":  "Transmisión",
+        "cost":  900,
+        "price":  1300,
+        "stock":  15,
+        "created":  "2026-10-14T09:40:00.000Z"
+    },
+    {
+        "id":  "ref_37",
+        "name":  "Junta homocinética",
+        "category":  "Transmisión",
+        "cost":  450,
+        "price":  680,
+        "stock":  15,
+        "created":  "2026-10-14T09:40:00.000Z"
+    },
+    {
+        "id":  "ref_38",
+        "name":  "Cadena de transmisión (Motos)",
+        "category":  "Transmisión",
+        "cost":  300,
+        "price":  480,
+        "stock":  20,
+        "created":  "2026-10-14T09:40:00.000Z"
+    },
+    {
+        "id":  "ref_39",
+        "name":  "Piñón (Motos)",
+        "category":  "Transmisión",
+        "cost":  150,
+        "price":  250,
+        "stock":  20,
+        "created":  "2026-10-14T09:40:00.000Z"
+    },
+    {
+        "id":  "ref_40",
+        "name":  "Corona / Sprocket (Motos)",
+        "category":  "Transmisión",
+        "cost":  280,
+        "price":  420,
+        "stock":  20,
+        "created":  "2026-10-14T09:40:00.000Z"
+    },
+    {
+        "id":  "ref_41",
+        "name":  "Pastillas de freno (Balatas)",
+        "category":  "Frenos",
+        "cost":  220,
+        "price":  350,
+        "stock":  20,
+        "created":  "2026-10-14T09:40:00.000Z"
+    },
+    {
+        "id":  "ref_42",
+        "name":  "Disco de freno",
+        "category":  "Frenos",
+        "cost":  400,
+        "price":  600,
+        "stock":  15,
+        "created":  "2026-10-14T09:40:00.000Z"
+    },
+    {
+        "id":  "ref_43",
+        "name":  "Tambor de freno",
+        "category":  "Frenos",
+        "cost":  350,
+        "price":  520,
+        "stock":  15,
+        "created":  "2026-10-14T09:40:00.000Z"
+    },
+    {
+        "id":  "ref_44",
+        "name":  "Zapatas de freno",
+        "category":  "Frenos",
+        "cost":  180,
+        "price":  280,
+        "stock":  20,
+        "created":  "2026-10-14T09:40:00.000Z"
+    },
+    {
+        "id":  "ref_45",
+        "name":  "Caliper (Mordaza)",
+        "category":  "Frenos",
+        "cost":  650,
+        "price":  900,
+        "stock":  15,
+        "created":  "2026-10-14T09:40:00.000Z"
+    },
+    {
+        "id":  "ref_46",
+        "name":  "Cilindro maestro de frenos",
+        "category":  "Frenos",
+        "cost":  450,
+        "price":  650,
+        "stock":  15,
+        "created":  "2026-10-14T09:40:00.000Z"
+    },
+    {
+        "id":  "ref_47",
+        "name":  "Líneas de freno (Latiguillos)",
+        "category":  "Frenos",
+        "cost":  150,
+        "price":  250,
+        "stock":  20,
+        "created":  "2026-10-14T09:40:00.000Z"
+    },
+    {
+        "id":  "ref_48",
+        "name":  "Servofreno (Booster)",
+        "category":  "Frenos",
+        "cost":  1200,
+        "price":  1800,
+        "stock":  8,
+        "created":  "2026-10-14T09:40:00.000Z"
+    },
+    {
+        "id":  "ref_49",
+        "name":  "Módulo ABS",
+        "category":  "Frenos",
+        "cost":  4500,
+        "price":  6200,
+        "stock":  0,
+        "created":  "2026-10-14T09:40:00.000Z"
+    },
+    {
+        "id":  "ref_50",
+        "name":  "Sensor de velocidad ABS",
+        "category":  "Frenos",
+        "cost":  350,
+        "price":  550,
+        "stock":  0,
+        "created":  "2026-10-14T09:40:00.000Z"
+    },
+    {
+        "id":  "ref_51",
+        "name":  "Pedal de freno",
+        "category":  "Frenos",
+        "cost":  250,
+        "price":  400,
+        "stock":  20,
+        "created":  "2026-10-14T09:40:00.000Z"
+    },
+    {
+        "id":  "ref_52",
+        "name":  "Manija de freno (Motos)",
+        "category":  "Frenos",
+        "cost":  80,
+        "price":  150,
+        "stock":  20,
+        "created":  "2026-10-14T09:40:00.000Z"
+    },
+    {
+        "id":  "ref_53",
+        "name":  "Cable de freno",
+        "category":  "Frenos",
+        "cost":  90,
+        "price":  160,
+        "stock":  20,
+        "created":  "2026-10-14T09:40:00.000Z"
+    },
+    {
+        "id":  "ref_54",
+        "name":  "Purgador de freno",
+        "category":  "Frenos",
+        "cost":  20,
+        "price":  45,
+        "stock":  35,
+        "created":  "2026-10-14T09:40:00.000Z"
+    },
+    {
+        "id":  "ref_55",
+        "name":  "Amortiguador delantero",
+        "category":  "Suspensión/Dirección",
+        "cost":  650,
+        "price":  950,
+        "stock":  15,
+        "created":  "2026-10-14T09:40:00.000Z"
+    },
+    {
+        "id":  "ref_56",
+        "name":  "Amortiguador trasero",
+        "category":  "Suspensión/Dirección",
+        "cost":  550,
+        "price":  850,
+        "stock":  15,
+        "created":  "2026-10-14T09:40:00.000Z"
+    },
+    {
+        "id":  "ref_57",
+        "name":  "Resorte helicoidal (Muelle)",
+        "category":  "Suspensión/Dirección",
+        "cost":  350,
+        "price":  550,
+        "stock":  15,
+        "created":  "2026-10-14T09:40:00.000Z"
+    },
+    {
+        "id":  "ref_58",
+        "name":  "Horquilla de suspensión",
+        "category":  "Suspensión/Dirección",
+        "cost":  480,
+        "price":  720,
+        "stock":  15,
+        "created":  "2026-10-14T09:40:00.000Z"
+    },
+    {
+        "id":  "ref_59",
+        "name":  "Rótula",
+        "category":  "Suspensión/Dirección",
+        "cost":  180,
+        "price":  290,
+        "stock":  20,
+        "created":  "2026-10-14T09:40:00.000Z"
+    },
+    {
+        "id":  "ref_60",
+        "name":  "Buje de suspensión",
+        "category":  "Suspensión/Dirección",
+        "cost":  80,
+        "price":  140,
+        "stock":  35,
+        "created":  "2026-10-14T09:40:00.000Z"
+    },
+    {
+        "id":  "ref_61",
+        "name":  "Barra estabilizadora",
+        "category":  "Suspensión/Dirección",
+        "cost":  450,
+        "price":  680,
+        "stock":  15,
+        "created":  "2026-10-14T09:40:00.000Z"
+    },
+    {
+        "id":  "ref_62",
+        "name":  "Bieleta",
+        "category":  "Suspensión/Dirección",
+        "cost":  150,
+        "price":  260,
+        "stock":  20,
+        "created":  "2026-10-14T09:40:00.000Z"
+    },
+    {
+        "id":  "ref_63",
+        "name":  "Cremallera de dirección",
+        "category":  "Suspensión/Dirección",
+        "cost":  2200,
+        "price":  3100,
+        "stock":  8,
+        "created":  "2026-10-14T09:40:00.000Z"
+    },
+    {
+        "id":  "ref_64",
+        "name":  "Bomba de dirección hidráulica",
+        "category":  "Suspensión/Dirección",
+        "cost":  1100,
+        "price":  1600,
+        "stock":  8,
+        "created":  "2026-10-14T09:40:00.000Z"
+    },
+    {
+        "id":  "ref_65",
+        "name":  "Terminal de dirección",
+        "category":  "Suspensión/Dirección",
+        "cost":  160,
+        "price":  250,
+        "stock":  20,
+        "created":  "2026-10-14T09:40:00.000Z"
+    },
+    {
+        "id":  "ref_66",
+        "name":  "Columna de dirección",
+        "category":  "Suspensión/Dirección",
+        "cost":  1500,
+        "price":  2200,
+        "stock":  8,
+        "created":  "2026-10-14T09:40:00.000Z"
+    },
+    {
+        "id":  "ref_67",
+        "name":  "Volante",
+        "category":  "Suspensión/Dirección",
+        "cost":  800,
+        "price":  1300,
+        "stock":  15,
+        "created":  "2026-10-14T09:40:00.000Z"
+    },
+    {
+        "id":  "ref_68",
+        "name":  "Manillar (Motos)",
+        "category":  "Suspensión/Dirección",
+        "cost":  350,
+        "price":  550,
+        "stock":  15,
+        "created":  "2026-10-14T09:40:00.000Z"
+    },
+    {
+        "id":  "ref_69",
+        "name":  "Telescopios de suspensión (Motos)",
+        "category":  "Suspensión/Dirección",
+        "cost":  1200,
+        "price":  1800,
+        "stock":  8,
+        "created":  "2026-10-14T09:40:00.000Z"
+    },
+    {
+        "id":  "ref_70",
+        "name":  "Balero de rueda (Rodamiento)",
+        "category":  "Suspensión/Dirección",
+        "cost":  220,
+        "price":  350,
+        "stock":  20,
+        "created":  "2026-10-14T09:40:00.000Z"
+    },
+    {
+        "id":  "ref_71",
+        "name":  "Batería",
+        "category":  "Sistema Eléctrico",
+        "cost":  1100,
+        "price":  1650,
+        "stock":  8,
+        "created":  "2026-10-14T09:40:00.000Z"
+    },
+    {
+        "id":  "ref_72",
+        "name":  "Alternador",
+        "category":  "Sistema Eléctrico",
+        "cost":  1800,
+        "price":  2600,
+        "stock":  8,
+        "created":  "2026-10-14T09:40:00.000Z"
+    },
+    {
+        "id":  "ref_73",
+        "name":  "Estator (Motos)",
+        "category":  "Sistema Eléctrico",
+        "cost":  450,
+        "price":  700,
+        "stock":  15,
+        "created":  "2026-10-14T09:40:00.000Z"
+    },
+    {
+        "id":  "ref_74",
+        "name":  "Motor de arranque (Marcha)",
+        "category":  "Sistema Eléctrico",
+        "cost":  1200,
+        "price":  1750,
+        "stock":  8,
+        "created":  "2026-10-14T09:40:00.000Z"
+    },
+    {
+        "id":  "ref_75",
+        "name":  "Bujía",
+        "category":  "Sistema Eléctrico",
+        "cost":  40,
+        "price":  75,
+        "stock":  35,
+        "created":  "2026-10-14T09:40:00.000Z"
+    },
+    {
+        "id":  "ref_76",
+        "name":  "Bobina de encendido",
+        "category":  "Sistema Eléctrico",
+        "cost":  350,
+        "price":  550,
+        "stock":  15,
+        "created":  "2026-10-14T09:40:00.000Z"
+    },
+    {
+        "id":  "ref_77",
+        "name":  "Cables de bujía",
+        "category":  "Sistema Eléctrico",
+        "cost":  220,
+        "price":  380,
+        "stock":  20,
+        "created":  "2026-10-14T09:40:00.000Z"
+    },
+    {
+        "id":  "ref_78",
+        "name":  "Módulo de control del motor (ECU)",
+        "category":  "Sistema Eléctrico",
+        "cost":  3500,
+        "price":  5200,
+        "stock":  4,
+        "created":  "2026-10-14T09:40:00.000Z"
+    },
+    {
+        "id":  "ref_79",
+        "name":  "Caja de fusibles",
+        "category":  "Sistema Eléctrico",
+        "cost":  450,
+        "price":  700,
+        "stock":  15,
+        "created":  "2026-10-14T09:40:00.000Z"
+    },
+    {
+        "id":  "ref_80",
+        "name":  "Relé (Relay)",
+        "category":  "Sistema Eléctrico",
+        "cost":  60,
+        "price":  110,
+        "stock":  35,
+        "created":  "2026-10-14T09:40:00.000Z"
+    },
+    {
+        "id":  "ref_81",
+        "name":  "Interruptor de encendido (Switch)",
+        "category":  "Sistema Eléctrico",
+        "cost":  180,
+        "price":  290,
+        "stock":  20,
+        "created":  "2026-10-14T09:40:00.000Z"
+    },
+    {
+        "id":  "ref_82",
+        "name":  "Faro delantero",
+        "category":  "Sistema Eléctrico",
+        "cost":  850,
+        "price":  1300,
+        "stock":  15,
+        "created":  "2026-10-14T09:40:00.000Z"
+    },
+    {
+        "id":  "ref_83",
+        "name":  "Calavera (Faro trasero)",
+        "category":  "Sistema Eléctrico",
+        "cost":  450,
+        "price":  700,
+        "stock":  15,
+        "created":  "2026-10-14T09:40:00.000Z"
+    },
+    {
+        "id":  "ref_84",
+        "name":  "Foco direccional",
+        "category":  "Sistema Eléctrico",
+        "cost":  15,
+        "price":  35,
+        "stock":  35,
+        "created":  "2026-10-14T09:40:00.000Z"
+    },
+    {
+        "id":  "ref_85",
+        "name":  "Sensor de oxígeno (Sonda Lambda)",
+        "category":  "Sistema Eléctrico",
+        "cost":  550,
+        "price":  850,
+        "stock":  15,
+        "created":  "2026-10-14T09:40:00.000Z"
+    },
+    {
+        "id":  "ref_86",
+        "name":  "Sensor MAF",
+        "category":  "Sistema Eléctrico",
+        "cost":  650,
+        "price":  1000,
+        "stock":  15,
+        "created":  "2026-10-14T09:40:00.000Z"
+    },
+    {
+        "id":  "ref_87",
+        "name":  "Claxon (Bocina)",
+        "category":  "Sistema Eléctrico",
+        "cost":  150,
+        "price":  250,
+        "stock":  20,
+        "created":  "2026-10-14T09:40:00.000Z"
+    },
+    {
+        "id":  "ref_88",
+        "name":  "Fascia delantera (Defensa)",
+        "category":  "Carrocería y Otros",
+        "cost":  1200,
+        "price":  1850,
+        "stock":  8,
+        "created":  "2026-10-14T09:40:00.000Z"
+    },
+    {
+        "id":  "ref_89",
+        "name":  "Fascia trasera",
+        "category":  "Carrocería y Otros",
+        "cost":  1100,
+        "price":  1700,
+        "stock":  8,
+        "created":  "2026-10-14T09:40:00.000Z"
+    },
+    {
+        "id":  "ref_90",
+        "name":  "Cofre (Capó)",
+        "category":  "Carrocería y Otros",
+        "cost":  1800,
+        "price":  2800,
+        "stock":  8,
+        "created":  "2026-10-14T09:40:00.000Z"
+    },
+    {
+        "id":  "ref_91",
+        "name":  "Puerta",
+        "category":  "Carrocería y Otros",
+        "cost":  2500,
+        "price":  3800,
+        "stock":  8,
+        "created":  "2026-10-14T09:40:00.000Z"
+    },
+    {
+        "id":  "ref_92",
+        "name":  "Espejo retrovisor interior",
+        "category":  "Carrocería y Otros",
+        "cost":  150,
+        "price":  280,
+        "stock":  20,
+        "created":  "2026-10-14T09:40:00.000Z"
+    },
+    {
+        "id":  "ref_93",
+        "name":  "Espejo lateral",
+        "category":  "Carrocería y Otros",
+        "cost":  450,
+        "price":  750,
+        "stock":  15,
+        "created":  "2026-10-14T09:40:00.000Z"
+    },
+    {
+        "id":  "ref_94",
+        "name":  "Parabrisas",
+        "category":  "Carrocería y Otros",
+        "cost":  1500,
+        "price":  2400,
+        "stock":  8,
+        "created":  "2026-10-14T09:40:00.000Z"
+    },
+    {
+        "id":  "ref_95",
+        "name":  "Ventanilla lateral",
+        "category":  "Carrocería y Otros",
+        "cost":  600,
+        "price":  950,
+        "stock":  15,
+        "created":  "2026-10-14T09:40:00.000Z"
+    },
+    {
+        "id":  "ref_96",
+        "name":  "Asiento",
+        "category":  "Carrocería y Otros",
+        "cost":  1800,
+        "price":  2800,
+        "stock":  8,
+        "created":  "2026-10-14T09:40:00.000Z"
+    },
+    {
+        "id":  "ref_97",
+        "name":  "Cinturón de seguridad",
+        "category":  "Carrocería y Otros",
+        "cost":  350,
+        "price":  550,
+        "stock":  15,
+        "created":  "2026-10-14T09:40:00.000Z"
+    },
+    {
+        "id":  "ref_98",
+        "name":  "Tanque de combustible",
+        "category":  "Carrocería y Otros",
+        "cost":  1600,
+        "price":  2500,
+        "stock":  8,
+        "created":  "2026-10-14T09:40:00.000Z"
+    },
+    {
+        "id":  "ref_99",
+        "name":  "Rin (Aro de rueda)",
+        "category":  "Carrocería y Otros",
+        "cost":  800,
+        "price":  1250,
+        "stock":  15,
+        "created":  "2026-10-14T09:40:00.000Z"
+    },
+    {
+        "id":  "ref_100",
+        "name":  "Neumático (Llanta)",
+        "category":  "Carrocería y Otros",
+        "cost":  1100,
+        "price":  1650,
+        "stock":  8,
+        "created":  "2026-10-14T09:40:00.000Z"
     }
-}
+];
+let catalog = JSON.parse(JSON.stringify(REFACCIONES_CATALOG));
+catalog.forEach(p => { if(p.stock === undefined || p.stock === null) p.stock = 20; });
+let salesLog = [];
+let expenses = [];
+let ticket = [];
+let posChart;
 
-function promptOpenShift(){
-    const m = document.getElementById('shift-open-modal');
-    if(m) {
-        const inp = document.getElementById('shift-initial-cash');
-        if(inp) inp.value = '500';
-        m.classList.remove('hidden');
+async function initPosData(){
+    if (!window.FirebaseService) {
+        await new Promise(r => {
+            window.addEventListener('firebase-initialized', r, { once: true });
+            setTimeout(r, 1500);
+        });
     }
-}
 
-function closeShiftOpenModal(){
-    const m = document.getElementById('shift-open-modal');
-    if(m) m.classList.add('hidden');
-}
-
-function confirmOpenShift(){
-    const input = document.getElementById('shift-initial-cash');
-    const amount = parseFloat(input ? input.value : 0) || 0;
-    currentShift = {
-        id: 'sh_' + Date.now(),
-        openedAt: new Date().toISOString(),
-        closedAt: null,
-        cashierId: currentUser ? currentUser.id : 'usr_caja',
-        cashierUsername: currentUser ? currentUser.username : 'caja_demo',
-        cashierName: currentUser ? currentUser.name : 'Cajero',
-        initialCashFloat: amount,
-        status: 'open'
-    };
-    if(window.FirebaseService){
-        window.FirebaseService.stats.saveCurrentShift(currentShift).catch(e => console.warn(e));
-    }
-    logActivity('Turno Abierto', `Fondo inicial: ${fmt(amount)} por @${currentShift.cashierUsername}`, 'success');
-    closeShiftOpenModal();
-    updateShiftUI();
-    lucide.createIcons();
-}
-
-function computeShiftCutX(){
-    if(!currentShift) return null;
-    const shiftSales = salesLog.filter(s => 
-        s.status === 'completed' && 
-        new Date(s.date) >= new Date(currentShift.openedAt) &&
-        (currentUser.role === 'admin' || currentUser.role === 'supervisor' || s.cashierId === currentShift.cashierId)
-    );
-
-    let cashSales = 0, cardSales = 0, transferSales = 0, totalSales = 0;
-    shiftSales.forEach(s => {
-        totalSales += (s.total || 0);
-        if(s.payment){
-            cashSales += (s.payment.cash || 0);
-            cardSales += (s.payment.card || 0);
-            transferSales += (s.payment.transfer || 0);
-        } else {
-            cashSales += (s.total || 0);
+    try {
+        if (window.FirebaseService && window.FirebaseService.products) {
+            await window.FirebaseService.products.seedIfEmpty(REFACCIONES_CATALOG);
+            const cloudCatalog = await window.FirebaseService.products.getAll();
+            if (cloudCatalog && cloudCatalog.length > 0) {
+                catalog = cloudCatalog;
+            }
+            // Suscripción reactiva a cambios en catálogo
+            window.FirebaseService.products.subscribe((updated) => {
+                if (updated && updated.length > 0) {
+                    catalog = updated;
+                    renderCatalog();
+                    updateProductSelect();
+                    if (typeof renderAlmacenDashboard === 'function') renderAlmacenDashboard();
+                }
+            });
         }
-    });
 
-    const expectedCashInDrawer = currentShift.initialCashFloat + cashSales;
-    return {
-        shift: currentShift,
-        salesCount: shiftSales.length,
-        totalSales,
-        cashSales,
-        cardSales,
-        transferSales,
-        initialCashFloat: currentShift.initialCashFloat,
-        expectedCashInDrawer
-    };
-}
+        if (window.FirebaseService && window.FirebaseService.sales) {
+            const cloudSales = await window.FirebaseService.sales.getAll(300);
+            if (cloudSales) {
+                salesLog = cloudSales;
+            }
+            // Suscripción reactiva a ventas
+            window.FirebaseService.sales.subscribe((updated) => {
+                if (updated) {
+                    salesLog = updated;
+                    upPosSummary();
+                    upPosStats();
+                }
+            });
+        }
 
-function showCutXModal(){
-    const data = computeShiftCutX();
-    if(!data) { alert("No hay turno abierto actualmente."); return; }
-    
-    document.getElementById('cutx-folio').textContent = data.shift.id;
-    document.getElementById('cutx-cashier').textContent = data.shift.cashierName;
-    document.getElementById('cutx-start').textContent = formatAppDate(data.shift.openedAt);
-    document.getElementById('cutx-float').textContent = fmt(data.initialCashFloat);
-    document.getElementById('cutx-cash-sales').textContent = fmt(data.cashSales);
-    document.getElementById('cutx-card-sales').textContent = fmt(data.cardSales);
-    document.getElementById('cutx-transf-sales').textContent = fmt(data.transferSales);
-    document.getElementById('cutx-total-sales').textContent = fmt(data.totalSales);
-    document.getElementById('cutx-expected-cash').textContent = fmt(data.expectedCashInDrawer);
-
-    document.getElementById('shift-cutx-modal').classList.remove('hidden');
-    logActivity('Lectura Corte X', `Consulta de corte parcial por @${currentUser.username}`, 'info');
-    lucide.createIcons();
-}
-
-function closeCutXModal(){
-    document.getElementById('shift-cutx-modal').classList.add('hidden');
-}
-
-function showCutZModal(){
-    const data = computeShiftCutX();
-    if(!data) { alert("No hay turno abierto."); return; }
-
-    document.getElementById('cutz-expected-cash').textContent = fmt(data.expectedCashInDrawer);
-    document.getElementById('cutz-total-sales').textContent = fmt(data.totalSales);
-    const physInput = document.getElementById('cutz-physical-cash');
-    if(physInput) physInput.value = '';
-    const discEl = document.getElementById('cutz-discrepancy');
-    if(discEl) discEl.textContent = '$0.00';
-
-    document.getElementById('shift-cutz-modal').classList.remove('hidden');
-    lucide.createIcons();
-}
-
-function closeCutZModal(){
-    document.getElementById('shift-cutz-modal').classList.add('hidden');
-}
-
-function onCutzPhysicalCashChange(){
-    const data = computeShiftCutX();
-    if(!data) return;
-    const physical = parseFloat(document.getElementById('cutz-physical-cash').value) || 0;
-    const diff = physical - data.expectedCashInDrawer;
-    const diffEl = document.getElementById('cutz-discrepancy');
-    if(diffEl){
-        diffEl.textContent = (diff >= 0 ? '+' : '') + fmt(diff);
-        diffEl.className = 'font-bold mono text-sm ' + (Math.abs(diff) < 0.5 ? 'text-emerald-400' : diff > 0 ? 'text-sky-400' : 'text-rose-400');
-    }
-}
-
-function confirmCloseShiftZ(){
-    const data = computeShiftCutX();
-    if(!data) return;
-
-    const physical = parseFloat(document.getElementById('cutz-physical-cash').value);
-    if(isNaN(physical)){
-        alert("Por favor ingresa el monto total de efectivo contado físicamente en caja.");
-        return;
+        if (window.FirebaseService && window.FirebaseService.stats) {
+            const cloudExpenses = await window.FirebaseService.stats.getExpenses();
+            if (cloudExpenses) {
+                expenses = cloudExpenses;
+            }
+        }
+    } catch(e) {
+        console.error('[Error al sincronizar POS con Firestore]', e);
     }
 
-    const discrepancy = physical - data.expectedCashInDrawer;
-    currentShift.closedAt = new Date().toISOString();
-    currentShift.actualCashCount = physical;
-    currentShift.expectedCash = data.expectedCashInDrawer;
-    currentShift.discrepancy = discrepancy;
-    currentShift.totalSales = data.totalSales;
-    currentShift.status = 'closed';
-
-    shiftsHistory.push(currentShift);
-    if(window.FirebaseService){
-        window.FirebaseService.stats.saveCurrentShift(null).catch(e => console.warn(e));
-        window.FirebaseService.stats.saveShiftsHistory(shiftsHistory).catch(e => console.warn(e));
-    }
-
-    logActivity('Cierre de Turno (Corte Z)', `Turno cerrado con ${fmt(physical)} en caja. Discrepancia: ${fmt(discrepancy)}`, Math.abs(discrepancy) < 1 ? 'success' : 'warn');
-
-    alert(`✓ Turno cerrado exitosamente (Corte Z).
-
-Efectivo Esperado: ${fmt(data.expectedCashInDrawer)}
-Efectivo Físico: ${fmt(physical)}
-Diferencia: ${(discrepancy >= 0 ? '+' : '') + fmt(discrepancy)}`);
-    
-    currentShift = null;
-    closeCutZModal();
-    updateShiftUI();
+    renderCatalog();
+    updateProductSelect();
     upPosSummary();
+    upPosStats();
 }
 
-// --- 2. IMPRESIÓN DE TICKET TÉRMICO (ESC/POS 58mm/80mm) ---
-function printSaleTicket(saleId){
-    const sale = salesLog.find(s => s.id === saleId);
-    if(!sale) { alert("Ticket no encontrado"); return; }
-
-    const taxRate = sale.taxRate !== undefined ? sale.taxRate : currentTaxZoneRate;
-    const subtotal = sale.subtotal !== undefined ? sale.subtotal : (sale.total / (1 + taxRate));
-    const taxAmount = sale.taxAmount !== undefined ? sale.taxAmount : (sale.total - subtotal);
-    const taxLabel = taxRate === 0.08 ? 'IVA Fronterizo (8%)' : taxRate === 0.16 ? 'IVA General (16%)' : 'IVA Tasa Cero (0%)';
-
-    const p = sale.payment || { method: 'cash', label: 'Efectivo' };
-    let payDetail = '';
-    if(p.method === 'cash'){
-        payDetail = `<div>Método: Efectivo</div>
-                     <div class="tkt-flex"><span>Recibido:</span><span>${fmt(p.cashReceived || sale.total)}</span></div>
-                     <div class="tkt-flex"><span>Cambio:</span><span>${fmt(p.change || 0)}</span></div>`;
-    } else if(p.method === 'split'){
-        payDetail = `<div>Método: Pago Dividido</div>
-                     <div class="tkt-flex"><span>Efec: ${fmt(p.cash || 0)} | Tarj: ${fmt(p.card || 0)} | Transf: ${fmt(p.transfer || 0)}</span></div>`;
-    } else {
-        payDetail = `<div class="tkt-flex"><span>Método: ${p.label}</span><span>${p.reference ? 'Ref: ' + p.reference : ''}</span></div>`;
-    }
-
-    const itemsHtml = sale.items.map(it => `
-        <tr>
-            <td style="width:12%">${it.qty}</td>
-            <td style="width:58%">${it.name.substring(0, 20)}</td>
-            <td style="width:15%" class="tkt-right">${it.price.toFixed(2)}</td>
-            <td style="width:15%" class="tkt-right">${(it.qty * it.price).toFixed(2)}</td>
-        </tr>
-    `).join('');
-
-    const ticketHtml = `
-        <div class="tkt-center tkt-bold" style="font-size:13px">REFACCIONARIA Y SERVICIOS</div>
-        <div class="tkt-center">RFC: XAXX010101000</div>
-        <div class="tkt-center" style="font-size:10px">Sucursal Matriz · Monterrey, N.L.</div>
-        <div class="tkt-divider"></div>
-        <div class="tkt-flex"><span>Folio:</span><span class="tkt-bold">${sale.id}</span></div>
-        <div class="tkt-flex"><span>Fecha:</span><span>${formatAppDate(sale.date)}</span></div>
-        <div class="tkt-flex"><span>Cajero:</span><span>@${sale.cashierUsername || 'caja'}</span></div>
-        <div class="tkt-double-divider"></div>
-        <table class="tkt-table">
-            <thead>
-                <tr>
-                    <th>Cant</th>
-                    <th>Descripción</th>
-                    <th class="tkt-right">P.U.</th>
-                    <th class="tkt-right">Imp</th>
-                </tr>
-            </thead>
-            <tbody>${itemsHtml}</tbody>
-        </table>
-        <div class="tkt-divider"></div>
-        <div class="tkt-flex"><span>Subtotal:</span><span>${fmt(subtotal)}</span></div>
-        <div class="tkt-flex"><span>${taxLabel}:</span><span>${fmt(taxAmount)}</span></div>
-        <div class="tkt-flex tkt-bold" style="font-size:13px;margin-top:2px">
-            <span>TOTAL:</span><span>${fmt(sale.total)}</span>
-        </div>
-        <div class="tkt-divider"></div>
-        ${payDetail}
-        <div class="tkt-double-divider"></div>
-        <div class="tkt-center" style="font-size:9.5px">COMPROBANTE SIMPLIFICADO DE VENTA</div>
-        <div class="tkt-center" style="font-size:9px">Para solicitar factura electrónica acuda a sucursal</div>
-        <div class="tkt-center tkt-bold" style="margin-top:4px">¡GRACIAS POR SU PREFERENCIA!</div>
-    `;
-
-    const printArea = document.getElementById('thermal-print-area');
-    if(printArea){
-        printArea.innerHTML = ticketHtml;
-        window.print();
-    }
-}
-
-// --- 3. GESTIÓN DEL CATÁLOGO DE REFACCIONES E INVENTARIO ---
-function reloadRefaccionesCatalog(){
-    if(confirm('¿Recargar el catálogo con las 100 refacciones completas e inventario inicial?')){
+async function reloadRefaccionesCatalog(){
+    if(confirm('¿Recargar el catálogo con las 100 refacciones completas en Cloud Firestore?')){
         catalog = JSON.parse(JSON.stringify(REFACCIONES_CATALOG));
-        // Sincronizado en Cloud Firestore
+        if (window.FirebaseService && window.FirebaseService.products) {
+            await window.FirebaseService.products.seedIfEmpty(REFACCIONES_CATALOG);
+        }
         renderCatalog();
         updateProductSelect();
         onSellProductChange();
-        alert('✓ Se cargaron las 100 refacciones al inventario.');
+        showGlobalToast('✓ Catálogo de 100 refacciones sincronizado con Firestore.', 'success');
     }
 }
 
 function initPosChart(){if(posChart)posChart.destroy();posChart=new Chart(document.getElementById('cPosBars'),{type:'bar',data:{labels:[],datasets:[{label:'Ventas ($)',data:[],backgroundColor:'rgba(16,185,129,.55)',borderRadius:8,borderSkipped:false},{label:'Costo ($)',data:[],backgroundColor:'rgba(244,63,94,.35)',borderRadius:8,borderSkipped:false}]},options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{legend:{position:'bottom',labels:{font:{size:9},boxWidth:10}}},scales:{x:{ticks:{callback:v=>'$'+v},grid:{color:'rgba(51,65,85,.3)'},border:{display:false}},y:{ticks:{font:{size:10}},grid:{display:false},border:{display:false}}}}});}
+initPosChart();
 
 async function addProduct(){
     if(!hasPermission('catalog.edit')){
@@ -289,63 +994,38 @@ async function addProduct(){
     const stockInput=parseInt(document.getElementById('cat-stock').value);
     if(!name||isNaN(price)||isNaN(cost)){alert('Completa los campos de nombre, precio y costo.');return;}
     const stock = isNaN(stockInput) || stockInput < 0 ? 0 : stockInput;
-    const newProd = {
-        id: 'ref_' + Date.now(),
-        name,
-        price,
-        cost,
-        stock,
-        category: 'General',
-        created: new Date().toISOString()
-    };
+    const newProd = {id:'p_'+Date.now(),name,price,cost,stock,category:'General',created:new Date().toISOString()};
     catalog.push(newProd);
-
-    // Persistencia asíncrona en Cloud Firestore ('products')
-    if(window.FirebaseService){
-        try {
-            await window.FirebaseService.products.save(newProd);
-            showGlobalToast(`✓ Producto "${name}" guardado en Cloud Firestore`, 'success');
-        } catch(err) {
-            console.error('[Firestore addProduct Error]', err);
-        }
+    if (window.FirebaseService && window.FirebaseService.products) {
+        await window.FirebaseService.products.save(newProd);
     }
-
-    logActivity('Producto Creado en Firestore', `Producto "${name}" agregado al catálogo por @${currentUser ? currentUser.username : 'sistema'} ($${price})`, 'success');
+    logActivity('Producto Creado', `Producto "${name}" agregado al catálogo en Firestore ($${price})`, 'success');
     document.getElementById('cat-name').value='';document.getElementById('cat-price').value='';document.getElementById('cat-cost').value='';
     document.getElementById('cat-stock').value='20';
     renderCatalog();
     updateProductSelect();
+    showGlobalToast(`✓ Producto "${name}" guardado en Cloud Firestore`, 'success');
 }
 
 async function removeProduct(id){
     if(!hasPermission('catalog.delete') && (!currentUser || currentUser.role !== 'admin')){
         showAccessDeniedModal('Acceso Restringido: Los usuarios de tipo Almacén no tienen permitido eliminar productos. Solo los Administradores cuentan con autorización para realizar eliminaciones en el catálogo.');
-        if(currentUser){
-            logActivity('Intento No Autorizado', `El usuario "${currentUser.username}" (${currentUser.role}) intentó eliminar el producto ID "${id}" sin permisos de Administrador.`, 'danger');
-        }
         return;
     }
-    if(confirm('¿Eliminar este producto del catálogo e inventario en Cloud Firestore? Esta acción solo está autorizada para Administradores.')){
+    if(confirm('¿Eliminar este producto del catálogo en Firestore?')){
         const prod = catalog.find(p => p.id === id);
-        catalog = catalog.filter(p => p.id !== id);
-
-        // Eliminación asíncrona en Cloud Firestore ('products')
-        if(window.FirebaseService){
-            try {
-                await window.FirebaseService.products.delete(id);
-                showGlobalToast(`✓ Producto "${prod ? prod.name : id}" eliminado de Cloud Firestore`, 'info');
-            } catch(err) {
-                console.error('[Firestore removeProduct Error]', err);
-            }
+        catalog=catalog.filter(p=>p.id!==id);
+        if (window.FirebaseService && window.FirebaseService.products) {
+            await window.FirebaseService.products.delete(id);
         }
-
-        logActivity('Producto Eliminado en Firestore', `Producto "${prod ? prod.name : id}" eliminado del catálogo por Administrador @${currentUser ? currentUser.username : 'sistema'}`, 'danger');
+        logActivity('Producto Eliminado', `Producto "${prod ? prod.name : id}" eliminado del catálogo en Firestore.`, 'danger');
         renderCatalog();
         updateProductSelect();
+        showGlobalToast(`✓ Producto eliminado de Cloud Firestore.`, 'info');
     }
 }
 
-function addStockToProduct(){
+async function addStockToProduct(){
     if(!hasPermission('inventory.adjust')){
         showAccessDeniedModal('Solo un Supervisor o Administrador puede reabastecer inventario.');
         return;
@@ -357,16 +1037,18 @@ function addStockToProduct(){
     const prod = catalog.find(p => p.id === pid);
     if(!prod) return;
     prod.stock = (prod.stock || 0) + qty;
-    // Sincronizado en Cloud Firestore
-    logActivity('Stock Reabastecido', `Se sumaron ${qty} u. al producto "${prod.name}" (Stock actual: ${prod.stock} u.)`, 'info');
+    if (window.FirebaseService && window.FirebaseService.products) {
+        await window.FirebaseService.products.updateStock(pid, prod.stock);
+    }
+    logActivity('Stock Reabastecido', `Se sumaron ${qty} u. al producto "${prod.name}" en Firestore.`, 'info');
     document.getElementById('restock-qty').value = '10';
     renderCatalog();
     updateProductSelect();
     onSellProductChange();
-    alert(`✓ Se agregaron ${qty} unidades a "${prod.name}". Nuevo stock: ${prod.stock} u.`);
+    showGlobalToast(`✓ Se agregaron ${qty} unidades a "${prod.name}" (Firestore).`, 'success');
 }
 
-function quickAddStock(id, amount){
+async function quickAddStock(id, amount){
     if(!hasPermission('inventory.adjust')){
         showAccessDeniedModal('Solo un Supervisor o Administrador puede modificar existencias de inventario.');
         return;
@@ -381,10 +1063,10 @@ function quickAddStock(id, amount){
     }
     if(isNaN(addQty) || addQty <= 0){ alert('Cantidad inválida.'); return; }
     prod.stock = (prod.stock || 0) + addQty;
-    if(window.FirebaseService){
-        window.FirebaseService.products.updateStock(prod.id, prod.stock).catch(e=>console.warn(e));
+    if (window.FirebaseService && window.FirebaseService.products) {
+        await window.FirebaseService.products.updateStock(id, prod.stock);
     }
-    logActivity('Stock Reabastecido en Firestore', `Reabastecimiento de ${addQty} u. en "${prod.name}" en Cloud Firestore (Total: ${prod.stock} u.)`, 'info');
+    logActivity('Stock Reabastecido', `Reabastecimiento rápido de ${addQty} u. en "${prod.name}" en Firestore.`, 'info');
     renderCatalog();
     updateProductSelect();
     onSellProductChange();
@@ -578,7 +1260,6 @@ function onSellProductChange(fromProgrammatic = false){
     lucide.createIcons();
 }
 
-// --- 4. MODAL DE SELECCIÓN DE PIEZAS AL AGREGAR PRODUCTO ---
 function openSellQtyModal(pid){
     const prod = catalog.find(p => p.id === pid);
     if(!prod) return;
@@ -696,8 +1377,6 @@ function adjustSellQty(delta){
 function addSaleItemWithQty(pid, qty){
     if(!hasPermission('pos.sell')){
         showAccessDeniedModal('Tu rol no tiene autorización para agregar productos al ticket de venta.');
-
-// --- 5. OPERACIONES DEL TICKET DE VENTA ---
         return;
     }
     if(!pid){alert('Selecciona un producto.');return;}
@@ -764,7 +1443,6 @@ function quickSellProduct(pid){
     }
 }
 
-// --- 6. MODAL DE MODIFICACIÓN DE PIEZAS EN TICKET ---
 function openModifyTicketQtyModal(id){
     const item = ticket.find(t => t.id === id);
     if(!item){
@@ -897,7 +1575,8 @@ function stepTicketItemDirect(id, delta){
     setTicketItemQty(id, newQty);
 }
 
-// --- 7. MÉTODOS DE PAGO (EFECTIVO, TARJETA, TRANSFERENCIA, MIXTO) Y COBRO ---
+let currentPaymentMethod = 'cash';
+
 function setPaymentMethod(method){
     currentPaymentMethod = method;
     ['cash','card','transfer','split'].forEach(m => {
@@ -1240,7 +1919,12 @@ function closeSale(){
             prod.stock = Math.max(0, (prod.stock || 0) - it.qty);
         }
     });
-    // Sincronizado en Cloud Firestore
+    if (window.FirebaseService && window.FirebaseService.products) {
+        for (const it of ticket) {
+            const pr = catalog.find(p => p.id === it.id);
+            if (pr) window.FirebaseService.products.updateStock(it.id, pr.stock).catch(console.warn);
+        }
+    }
 
     // Validar turno de caja antes de registrar (o auto-iniciar si no hay)
     if(!currentShift || currentShift.status !== 'open'){
@@ -1254,9 +1938,7 @@ function closeSale(){
             initialCashFloat: 500,
             status: 'open'
         };
-        if(window.FirebaseService){
-        window.FirebaseService.stats.saveCurrentShift(currentShift).catch(e => console.warn(e));
-    }
+        localStorage.setItem('pos_current_shift', JSON.stringify(currentShift));
     }
 
     const subtotalCalc = total / (1 + currentTaxZoneRate);
@@ -1279,38 +1961,11 @@ function closeSale(){
         cashierName: currentUser ? currentUser.name : 'Cajero'
     };
 
-    logActivity('Venta Registrada en Firestore', `Venta cobrada por ${fmt(total)} (${paymentData.label}) por @${sale.cashierUsername}`, 'success');
+    logActivity('Venta Registrada', `Venta cobrada por ${fmt(total)} (${paymentData.label}) por @${sale.cashierUsername}`, 'success');
 
-    salesLog.push(sale);
-    
-    // Persistencia asíncrona integral en Cloud Firestore (sales, products, stats)
-    if(window.FirebaseService){
-        try {
-            // 1. Guardar la venta en la colección 'sales'
-            window.FirebaseService.sales.create(sale).catch(e => console.error('[Firestore sales.create error]', e));
-            
-            // 2. Descontar stock de cada refacción en la colección 'products'
-            ticket.forEach(it => {
-                const p = catalog.find(x => x.id === it.id);
-                if(p){
-                    window.FirebaseService.products.updateStock(p.id, p.stock).catch(e => console.error('[Firestore updateStock error]', e));
-                }
-            });
-
-            // 3. Actualizar estado del turno y métricas globales en la colección 'stats'
-            if(currentShift){
-                window.FirebaseService.stats.saveCurrentShift(currentShift).catch(e => console.error('[Firestore shift error]', e));
-            }
-            window.FirebaseService.stats.saveOverview({
-                lastSaleId: sale.id,
-                lastSaleTotal: sale.total,
-                salesCount: salesLog.length,
-                lastUpdated: new Date().toISOString()
-            }).catch(e => console.error('[Firestore stats.saveOverview error]', e));
-
-        } catch(cloudErr) {
-            console.error('[Cloud Firestore completeSale Exception]', cloudErr);
-        }
+    salesLog.unshift(sale);
+    if (window.FirebaseService && window.FirebaseService.sales) {
+        window.FirebaseService.sales.create(sale).catch(console.warn);
     }
     const justCreatedSaleId = sale.id;
 
@@ -1340,7 +1995,6 @@ function closeSale(){
     }, 150);
 }
 
-// --- 8. CONTROL DE GASTOS DIARIOS DE CAJA ---
 function addExpense(){
     if(!hasPermission('inventory.adjust') && !hasPermission('catalog.edit') && !hasPermission('sales.approve_cancel')){
         showAccessDeniedModal('Solo un Supervisor o Administrador puede registrar gastos operativos.');
@@ -1351,14 +2005,8 @@ function addExpense(){
     const cat=document.getElementById('exp-cat').value;
     if(!desc||isNaN(amount)){alert('Completa los campos.');return;}
     expenses.push({id:'e_'+Date.now(),date:new Date().toISOString(),desc,amount,category:cat});
-    
-    // Guardar en Cloud Firestore 'stats/expenses'
-    if(window.FirebaseService){
-        const docRef = window.FirebaseService.doc(window.FirebaseService.db, 'stats', 'expenses');
-        window.FirebaseService.setDoc(docRef, { list: expenses, updatedAt: new Date().toISOString() }, { merge: true }).catch(e => console.warn(e));
-    }
-
-    logActivity('Gasto Registrado en Firestore', `Gasto de ${fmt(amount)} (${desc}) registrado por @${currentUser ? currentUser.username : 'sistema'}`, 'warn');
+    localStorage.setItem('pos_expenses',JSON.stringify(expenses));
+    logActivity('Gasto Registrado', `Gasto de ${fmt(amount)} (${desc}) registrado por @${currentUser ? currentUser.username : 'sistema'}`, 'warn');
     document.getElementById('exp-desc').value='';document.getElementById('exp-amount').value='';
     renderExpenses();upPosSummary();
 }
@@ -1370,7 +2018,6 @@ function renderExpenses(){
     document.getElementById('exp-list').innerHTML=todayExp.map(e=>`<div class="pos-row"><div class="flex-1"><div class="text-sm text-white">${e.desc}</div><div class="text-[10px] text-slate-500">${e.category==='fijo'?'Gasto Fijo':e.category==='variable'?'Gasto Variable':'Otro'}</div></div><div class="text-sm mono text-rose-400">${fmt(e.amount)}</div></div>`).join('');
 }
 
-// --- 9. RESUMEN Y BALANCE DIARIO DEL POS ---
 function upPosSummary(){
     const today = new Date().toDateString();
     const isCajero = currentUser && currentUser.role === 'cajero';
@@ -1525,15 +2172,25 @@ function upPosSummary(){
         productCosts[it.name] = (productCosts[it.name] || 0) + it.cost * it.qty;
     }));
     const labels = Object.keys(productSales);
-    if(posChart && posChart.data){
-        posChart.data.labels = labels;
-        posChart.data.datasets[0].data = labels.map(l => productSales[l]);
-        posChart.data.datasets[1].data = labels.map(l => canViewFinance ? productCosts[l] : 0);
-        posChart.update();
+    posChart.data.labels = labels;
+    posChart.data.datasets[0].data = labels.map(l => productSales[l]);
+    posChart.data.datasets[1].data = labels.map(l => canViewFinance ? productCosts[l] : 0);
+    posChart.update();
+}
+
+function deleteSale(id){
+    // Redirigir a cancelación directa o solicitud según permisos
+    if(hasPermission('sales.cancel_direct')){
+        promptDirectCancel(id);
+    } else if(hasPermission('sales.request_cancel')){
+        promptRequestCancel(id);
+    } else {
+        showAccessDeniedModal('No cuentas con permisos para cancelar ventas.');
     }
 }
 
-// --- 10. ESTADÍSTICAS AVANZADAS Y HORAS PICO ---
+// ===== POS ADVANCED STATISTICS =====
+let hourlyChart;
 function initHourlyChart(){
     const canvas = document.getElementById('cPosHourly');
     if(!canvas) return;
@@ -1718,23 +2375,6 @@ function upPosStats(){
     lucide.createIcons();
 }
 
-// --- 11. ANÁLISIS DE CORRELACIÓN DE PEARSON (CROSS-SELLING / CANIBALIZACIÓN) ---
-function calcPearsonCorrelation(x, y){
-    if(!x || !y || x.length !== y.length || x.length < 2) return 0;
-    const n = x.length;
-    let sumX = 0, sumY = 0, sumXX = 0, sumYY = 0, sumXY = 0;
-    for(let i = 0; i < n; i++){
-        sumX += x[i];
-        sumY += y[i];
-        sumXX += x[i] * x[i];
-        sumYY += y[i] * y[i];
-        sumXY += x[i] * y[i];
-    }
-    const numerator = (n * sumXY) - (sumX * sumY);
-    const denominator = Math.sqrt((n * sumXX - sumX * sumX) * (n * sumYY - sumY * sumY));
-    return denominator === 0 ? 0 : numerator / denominator;
-}
-
 function renderCorrelationAnalysis(products){
     const container = document.getElementById('correlation-table');
     const insightsContainer = document.getElementById('correlation-insights');
@@ -1855,51 +2495,57 @@ function renderCorrelationAnalysis(products){
     lucide.createIcons();
 }
 
-// --- 12. TABLERO DEL ENCARGADO DE ALMACÉN (ROP / PUNTO DE REORDEN) ---
-function renderAlmacenDashboard(){
-    const totalProds = catalog.length;
-    const totalUnits = catalog.reduce((acc, p) => acc + (p.stock || 0), 0);
-    const lowStockProds = catalog.filter(p => (p.stock || 0) > 0 && (p.stock || 0) <= (p.rop || 5));
-    const outStockProds = catalog.filter(p => (p.stock || 0) <= 0);
+function showPosTab(t){
+    // Validación estricta de permisos por pestaña en tiempo real
+    if(t === 'sell' && !hasPermission('pos.sell')){
+        showAccessDeniedModal('Tu rol no tiene autorización para registrar ventas.');
+        return;
+    }
+    if(t === 'catalog' && !hasPermission('catalog.view') && !hasPermission('inventory.view')){
+        showAccessDeniedModal('Tu rol no tiene autorización para consultar o gestionar el catálogo.');
+        return;
+    }
+    if(t === 'expense' && !hasPermission('inventory.adjust') && !hasPermission('catalog.edit')){
+        showAccessDeniedModal('Solo Administradores y Supervisores pueden registrar gastos operativos.');
+        return;
+    }
+    if(t === 'users' && !hasPermission('users.manage') && !hasPermission('sales.approve_cancel') && !hasPermission('audit.view_limited')){
+        showAccessDeniedModal('Tu rol no tiene acceso al módulo de seguridad, usuarios o auditoría.');
+        return;
+    }
 
-    const elTotP = document.getElementById('alm-total-prods');
-    const elTotU = document.getElementById('alm-total-units');
-    const elLow = document.getElementById('alm-low-stock');
-    const elOut = document.getElementById('alm-out-stock');
+    const pvAnalista = document.getElementById('pv-analista-info');
+    if(pvAnalista && currentUser.role !== 'analista') pvAnalista.classList.add('hidden');
 
-    if(elTotP) elTotP.textContent = totalProds;
-    if(elTotU) elTotU.textContent = totalUnits;
-    if(elLow) elLow.textContent = lowStockProds.length;
-    if(elOut) elOut.textContent = outStockProds.length;
+    ['catalog','sell','expense','users'].forEach(n => {
+        const el = document.getElementById('pv-' + n);
+        if(el) el.classList.toggle('hidden', n !== t);
+        const b = document.getElementById('pt-' + n);
+        if(b){
+            if(n === t){
+                b.classList.add('tab-on');
+                b.classList.remove('text-slate-500');
+            } else {
+                b.classList.remove('tab-on');
+                b.classList.add('text-slate-500');
+            }
+        }
+    });
 
-    const criticalList = [...outStockProds, ...lowStockProds];
-    const critContainer = document.getElementById('alm-critical-list');
-    if(!critContainer) return;
-
-    if(criticalList.length === 0){
-        critContainer.innerHTML = '<div class="text-emerald-400 text-xs py-6 text-center font-medium">✓ Todos los productos cuentan con inventario saludable (> 5 unidades).</div>';
-    } else {
-        critContainer.innerHTML = criticalList.map(p => {
-            const isZero = (p.stock || 0) <= 0;
-            const ropThreshold = p.rop || 5;
-            const badge = isZero
-                ? `<span class="pill bg-rose-500/20 text-rose-300 border border-rose-500/35 font-bold text-[9px] flex items-center gap-1"><i data-lucide="alert-octagon" class="w-2.5 h-2.5 text-rose-400"></i>AGOTADO (0 u.)</span>`
-                : `<span class="pill bg-amber-500/20 text-amber-300 border border-amber-500/35 font-bold text-[9px] flex items-center gap-1"><i data-lucide="alert-triangle" class="w-2.5 h-2.5 text-amber-400"></i>ROP Crítico (${p.stock} <= ${ropThreshold} u.)</span>`;
-            return `
-            <div class="pos-row flex items-center justify-between p-2.5 bg-slate-900/50 border border-slate-800 rounded-xl">
-                <div class="flex-1 min-w-0">
-                    <div class="flex items-center gap-2 mb-0.5 flex-wrap">
-                        <span class="text-xs font-semibold text-white truncate">${p.name}</span>
-                        ${badge}
-                    </div>
-                    <div class="text-[10px] text-slate-400 mono">P. Venta: ${fmt(p.price)} · Existencia: <b class="${isZero ? 'text-rose-400' : 'text-amber-400'}">${p.stock || 0} u.</b> · ROP: <span class="text-sky-300">${ropThreshold} u.</span> (Lead Time: ${p.leadTime || 7}d)</div>
-                </div>
-                <button onclick="quickAddStock('${p.id}', 10)" class="pos-btn bg-teal-600 hover:bg-teal-500 text-white text-[10.5px] py-1 px-2.5 shrink-0 flex items-center gap-1">
-                    <i data-lucide="plus" class="w-3 h-3"></i>+10 u.
-                </button>
-            </div>`;
-        }).join('');
+    if(t === 'sell'){
+        updateProductSelect();
+        onSellProductChange();
+        setPaymentMethod(currentPaymentMethod);
+        updatePaymentTotals();
+    }
+    if(t === 'catalog') renderCatalog();
+    if(t === 'expense') renderExpenses();
+    if(t === 'users'){
+        showUsersSubSection(currentUsersSubSection || 'users');
     }
     lucide.createIcons();
 }
+
+function exportPosDB(){const db={version:'1.0.0',exported:new Date().toISOString(),catalog,sales:salesLog,expenses};dl(db,'cfo_copilot_pos_database.json');toast('pos-toast');}
+
 

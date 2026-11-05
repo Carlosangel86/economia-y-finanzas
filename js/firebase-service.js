@@ -1,7 +1,7 @@
 // =====================================================================
 // FIREBASE CLOUD ECOSYSTEM SERVICE (firebase-service.js)
 // SDK v9+ Modular (Firebase App, Firebase Auth, Cloud Firestore)
-// Project: cfo-copilot-finanzas
+// Project: asesor-financiero-83679
 // =====================================================================
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
@@ -34,12 +34,12 @@ import {
 
 // --- 1. CONFIGURACIÓN EXACTA DE FIREBASE ---
 export const firebaseConfig = {
-  apiKey: "AIzaSyBZYo5RlcwaiX4HkFWrQChZmkfE0LP32bY",
-  authDomain: "cfo-copilot-finanzas.firebaseapp.com",
-  projectId: "cfo-copilot-finanzas",
-  storageBucket: "cfo-copilot-finanzas.firebasestorage.app",
-  messagingSenderId: "1070377055459",
-  appId: "1:1070377055459:web:cef4ddd96954e88d3581d6"
+  apiKey: "AIzaSyCXTHJXjAyj5DVyOQUVBih7uMNQzcvdZKc",
+  authDomain: "asesor-financiero-83679.firebaseapp.com",
+  projectId: "asesor-financiero-83679",
+  storageBucket: "asesor-financiero-83679.firebasestorage.app",
+  messagingSenderId: "810248667164",
+  appId: "1:810248667164:web:cbdf354358607efa8a1fd9"
 };
 
 // --- 2. INICIALIZACIÓN DEL CLIENTE MODULAR ---
@@ -92,7 +92,7 @@ export const AuthService = {
             return userCredential.user;
         } catch (error) {
             // Si es un usuario demo reconocido y aún no existe en Auth, auto-aprovisionarlo
-            if (error.code === 'auth/user-not-found' || error.code === 'auth/invalid-credential') {
+            if (error.code === 'auth/user-not-found' || error.code === 'auth/invalid-credential' || error.code === 'auth/invalid-login-credentials') {
                 const usernameKey = Object.keys(DEMO_USER_EMAILS).find(k => DEMO_USER_EMAILS[k].toLowerCase() === email.toLowerCase());
                 if (usernameKey) {
                     try {
@@ -149,11 +149,11 @@ export const UsersService = {
         }
     },
 
-    async getById(userId) {
+    async getById(id) {
         try {
-            const docRef = doc(db, 'users', userId);
-            const docSnap = await getDoc(docRef);
-            return docSnap.exists() ? { id: docSnap.id, ...docSnap.data() } : null;
+            const docRef = doc(db, 'users', id);
+            const snap = await getDoc(docRef);
+            return snap.exists() ? { id: snap.id, ...snap.data() } : null;
         } catch (e) {
             console.error('[Firestore Users.getById Error]', e);
             return null;
@@ -162,20 +162,20 @@ export const UsersService = {
 
     async saveUser(userData) {
         try {
-            const id = userData.id || userData.uid;
-            const docRef = doc(db, 'users', id);
-            await setDoc(docRef, { ...userData, updatedAt: serverTimestamp() }, { merge: true });
-            return true;
+            const docId = userData.id || userData.uid || ('usr_' + Date.now());
+            const docRef = doc(db, 'users', docId);
+            await setDoc(docRef, { ...userData, id: docId, updatedAt: serverTimestamp() }, { merge: true });
+            return docId;
         } catch (e) {
             console.error('[Firestore Users.saveUser Error]', e);
             throw e;
         }
     },
 
-    async updateRole(userId, newRole) {
+    async updateRole(id, role) {
         try {
-            const docRef = doc(db, 'users', userId);
-            await updateDoc(docRef, { role: newRole, updatedAt: serverTimestamp() });
+            const docRef = doc(db, 'users', id);
+            await updateDoc(docRef, { role, updatedAt: serverTimestamp() });
             return true;
         } catch (e) {
             console.error('[Firestore Users.updateRole Error]', e);
@@ -183,10 +183,10 @@ export const UsersService = {
         }
     },
 
-    async toggleActive(userId, active) {
+    async toggleActive(id, active) {
         try {
-            const docRef = doc(db, 'users', userId);
-            await updateDoc(docRef, { active: active, updatedAt: serverTimestamp() });
+            const docRef = doc(db, 'users', id);
+            await updateDoc(docRef, { active, updatedAt: serverTimestamp() });
             return true;
         } catch (e) {
             console.error('[Firestore Users.toggleActive Error]', e);
@@ -194,29 +194,47 @@ export const UsersService = {
         }
     },
 
-    async seedDefaultsIfEmpty(defaultUsers) {
+    async resetPassword(id, newPassword) {
+        try {
+            const docRef = doc(db, 'users', id);
+            await updateDoc(docRef, { password: newPassword, updatedAt: serverTimestamp() });
+            return true;
+        } catch (e) {
+            console.error('[Firestore Users.resetPassword Error]', e);
+            throw e;
+        }
+    },
+
+    async seedIfEmpty(defaultUsers) {
         try {
             const existing = await this.getAll();
             if (existing.length === 0 && Array.isArray(defaultUsers) && defaultUsers.length > 0) {
-                console.log('[Firestore] Sembrando usuarios demo iniciales en colección "users"...');
+                console.log(`[Firestore] Sembrando ${defaultUsers.length} usuarios por defecto en colección "users"...`);
                 const batch = writeBatch(db);
                 defaultUsers.forEach(u => {
                     const docRef = doc(db, 'users', u.id || u.username);
-                    batch.set(docRef, {
-                        ...u,
-                        email: DEMO_USER_EMAILS[u.username] || `${u.username}@cfocopilot.com`,
-                        createdAt: serverTimestamp()
-                    });
+                    const email = u.email || DEMO_USER_EMAILS[u.username] || `${u.username}@cfocopilot.com`;
+                    batch.set(docRef, { ...u, email, seededAt: serverTimestamp() });
                 });
                 await batch.commit();
-                console.log('[Firestore] ✓ 5 usuarios demo sembrados con éxito.');
+                console.log('[Firestore] ✓ Usuarios sembrados exitosamente.');
                 return await this.getAll();
             }
             return existing;
         } catch (e) {
-            console.error('[Firestore Users.seedDefaults Error]', e);
+            console.error('[Firestore Users.seedIfEmpty Error]', e);
             return defaultUsers || [];
         }
+    },
+
+    subscribe(callback) {
+        return onSnapshot(collection(db, 'users'), (snapshot) => {
+            const list = [];
+            snapshot.forEach(docSnap => {
+                list.push({ id: docSnap.id, ...docSnap.data() });
+            });
+            callback(list);
+        });
     }
 };
 
@@ -275,8 +293,6 @@ export const ProductsService = {
             const existing = await this.getAll();
             if (existing.length === 0 && Array.isArray(catalog100) && catalog100.length > 0) {
                 console.log(`[Firestore] Sembrando ${catalog100.length} refacciones en colección "products"...`);
-                
-                // Firestore permite un máximo de 500 operaciones por batch
                 const chunkSize = 250;
                 for (let i = 0; i < catalog100.length; i += chunkSize) {
                     const chunk = catalog100.slice(i, i + chunkSize);
@@ -320,13 +336,13 @@ export const SalesService = {
             });
             return list;
         } catch (e) {
-            // Si el índice ordenado aún no está listo o la colección está vacía, hacer fallback a query simple
             try {
                 const snap = await getDocs(collection(db, 'sales'));
                 const list = [];
                 snap.forEach(docSnap => {
                     list.push({ id: docSnap.id, ...docSnap.data() });
                 });
+                list.sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
                 return list;
             } catch (fallbackErr) {
                 console.error('[Firestore Sales.getAll Error]', fallbackErr);
@@ -373,7 +389,6 @@ export const SalesService = {
             snapshot.forEach(docSnap => {
                 list.push({ id: docSnap.id, ...docSnap.data() });
             });
-            // Ordenar por fecha descendente
             list.sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
             callback(list);
         });
@@ -503,6 +518,31 @@ export const StatsService = {
             console.error('[Firestore Stats.saveCancelRequests Error]', e);
             return false;
         }
+    },
+
+    async getExpenses() {
+        try {
+            const docRef = doc(db, 'stats', 'expenses');
+            const snap = await getDoc(docRef);
+            if (snap.exists() && Array.isArray(snap.data().items)) {
+                return snap.data().items;
+            }
+            return [];
+        } catch (e) {
+            console.error('[Firestore Stats.getExpenses Error]', e);
+            return [];
+        }
+    },
+
+    async saveExpenses(expensesList) {
+        try {
+            const docRef = doc(db, 'stats', 'expenses');
+            await setDoc(docRef, { items: expensesList, updatedAt: serverTimestamp() }, { merge: true });
+            return true;
+        } catch (e) {
+            console.error('[Firestore Stats.saveExpenses Error]', e);
+            return false;
+        }
     }
 };
 
@@ -524,4 +564,4 @@ window.FirebaseService = {
 
 // Despachar evento para notificar al resto de la aplicación
 window.dispatchEvent(new CustomEvent('firebase-initialized', { detail: window.FirebaseService }));
-console.log('✓ Firebase SDK v9+ Modular inicializado con éxito en CFO Copilot (Proyecto: cfo-copilot-finanzas).');
+console.log('✓ Firebase SDK v9+ Modular inicializado con éxito en CFO Copilot (Proyecto: asesor-financiero-83679).');

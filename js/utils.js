@@ -1,9 +1,13 @@
-// =====================================================================
-// UTILITIES & HELPER FUNCTIONS MODULE (utils.js)
-// CFO Copilot + Punto de Venta
-// =====================================================================
+// ===== CONFIGURACIÓN FISCAL, HUSOS HORARIOS & UTILIDADES GENERALES =====
 
-// --- 1. MANEJO DE ZONA FISCAL Y HUSO HORARIO MULTI-REGIÓN ---
+// ===== CONFIGURACIÓN FISCAL Y HUSOS HORARIOS MULTI-REGIÓN =====
+let currentTaxZoneRate = parseFloat(localStorage.getItem('pos_tax_rate')) || 0.16;
+let currentAppTimeZone = localStorage.getItem('pos_app_tz') || 'America/Mexico_City';
+
+// ===== CONTROL DE TURNOS Y ARQUEOS DE CAJA =====
+let currentShift = JSON.parse(localStorage.getItem('pos_current_shift')) || null;
+let shiftsHistory = JSON.parse(localStorage.getItem('pos_shifts_history')) || [];
+
 function onTaxZoneChange(val){
     currentTaxZoneRate = parseFloat(val) / 100;
     localStorage.setItem('pos_tax_rate', currentTaxZoneRate.toString());
@@ -43,7 +47,7 @@ function formatAppDate(isoString, options = null){
     }
 }
 
-// --- 2. NOTIFICACIONES GLOBALES TOAST ---
+
 function showGlobalToast(msg, type = 'info'){
     let toast = document.getElementById('cfo-global-toast');
     if(!toast){
@@ -71,7 +75,11 @@ function showGlobalToast(msg, type = 'info'){
     }, 2600);
 }
 
-// --- 3. UTILIDADES COMPARTIDAS, MENSAJES Y FORMATEADORES ---
+
+// Declaración compartida de eventos de auditoría y utilidades auxiliares
+let auditE = [];
+
+// ===== SHARED UTILS =====
 function addMsg(t,w){const c=document.getElementById('chat'),d=document.createElement('div');d.className='fin';if(w==='u')d.innerHTML=`<div class="flex flex-col items-end w-full"><span class="text-[9px] text-slate-500 mb-1 mr-1">Tú</span><div class="bg-slate-700/80 text-white p-3.5 rounded-2xl rounded-tr-sm max-w-[82%] text-[13px] shadow-lg border border-slate-600/60">${t}</div></div>`;else d.innerHTML=`<div class="flex flex-col items-start w-full"><span class="text-[9px] text-sky-400 font-semibold mb-1 ml-1 flex items-center gap-1"><i data-lucide="bot" class="w-3 h-3"></i>CFO Copilot</span><div class="bot-bubble">${t}</div></div>`;c.appendChild(d);lucide.createIcons();c.scrollTop=c.scrollHeight;}
 async function phase(id,t,cl,ms){st(id,t,cl);const p=document.getElementById('p'+id);if(p)p.classList.add('glow');await slp(ms);if(p)p.classList.remove('glow');}
 function st(id,t,cl){const el=document.getElementById('st'+id.charAt(0));if(el){el.textContent=t;el.className='text-[9px] uppercase font-bold mono text-white px-2 py-0.5 rounded '+cl;}}
@@ -81,3 +89,5 @@ function fmtS(v){if(Math.abs(v)>=1e6)return'$'+(v/1e6).toFixed(1)+'M';if(Math.ab
 function dl(obj,name){const b=new Blob([JSON.stringify(obj,null,2)],{type:'application/json'});const u=URL.createObjectURL(b);const a=document.createElement('a');a.href=u;a.download=name;a.click();URL.revokeObjectURL(u);}
 function toast(id){const el=document.getElementById(id);el.classList.remove('hidden');setTimeout(()=>el.classList.add('hidden'),3000);}
 const slp=ms=>new Promise(r=>setTimeout(r,ms));
+
+

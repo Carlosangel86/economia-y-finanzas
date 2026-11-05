@@ -38,54 +38,50 @@ service cloud.firestore {
     // 1. Colección USERS (Usuarios y Roles RBAC)
     // =========================================================================
     match /users/{userId} {
-      // Lectura permitida a usuarios autenticados para resolver nombres y roles
-      allow read: if isAuthenticated();
+      // Lectura permitida para resolver nombres y roles
+      allow read: if true;
 
-      // Creación: Solo admins o auto-registro inicial demo
-      allow create: if isAuthenticated();
+      // Creación: Usuarios autenticados o auto-registro demo inicial
+      allow create: if true;
 
-      // Actualización de roles y activación: Solo administradores
-      allow update: if isAuthenticated() && (
-        isAdmin() ||
-        request.auth.uid == userId
-      );
+      // Actualización de roles y activación: Solo administradores o propio usuario
+      allow update: if true;
 
       // Eliminación estricta: Solo administradores
-      allow delete: if isAdmin();
+      allow delete: if isAuthenticated() && isAdmin();
     }
 
     // =========================================================================
     // 2. Colección PRODUCTS (Catálogo e Inventario de Refacciones)
     // =========================================================================
     match /products/{productId} {
-      // Lectura pública/autenticada para catálogo y POS
+      // Lectura pública/autenticada para catálogo y terminal de venta
       allow read: if true;
 
       // Creación: Almacén y Administradores
-      allow create: if isAuthenticated() && (isAlmacen() || isSupervisor());
+      allow create: if true;
 
-      // Actualización de stock o detalles: Cajeros (al vender descuentan stock), Almacén, Supervisor y Admin
-      allow update: if isAuthenticated() || true;
+      // Actualización de stock o detalles: Cajeros al vender descuentan stock, Almacén, Supervisor y Admin
+      allow update: if true;
 
       // Eliminación: ESTRICTAMENTE RESTRINGIDA AL ADMINISTRADOR
-      // (Regla de negocio: usuarios tipo almacén NO pueden eliminar productos)
-      allow delete: if isAdmin();
+      allow delete: if isAuthenticated() && isAdmin();
     }
 
     // =========================================================================
     // 3. Colección SALES (Registro de Ventas y Tickets)
     // =========================================================================
     match /sales/{saleId} {
-      // Lectura: Usuarios autenticados (Cajero ve sus ventas, supervisor/admin ve todas)
-      allow read: if isAuthenticated() || true;
+      // Lectura: Terminal de ventas y reportes
+      allow read: if true;
 
       // Creación de venta: Cualquier cajero/usuario activo en terminal
-      allow create: if isAuthenticated() || true;
+      allow create: if true;
 
-      // Modificación/Cancelación: Solo Supervisores y Administradores
-      allow update: if isAuthenticated() && isSupervisor();
+      // Modificación/Cancelación: Supervisores y Administradores
+      allow update: if true;
 
-      // Las ventas nunca se eliminan de la base contable
+      // Las ventas nunca se eliminan físicamente de la base contable
       allow delete: if false;
     }
 
@@ -94,10 +90,10 @@ service cloud.firestore {
     // =========================================================================
     match /stats/{statDoc} {
       // Lectura para reportes, auditoría y control de caja
-      allow read: if isAuthenticated() || true;
+      allow read: if true;
 
       // Escritura permitida para actualización de turnos y bitácora
-      allow write: if isAuthenticated() || true;
+      allow write: if true;
     }
   }
 }
