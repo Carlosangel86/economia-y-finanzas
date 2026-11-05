@@ -3,904 +3,1004 @@
 // ===== POS MODULE =====
 const REFACCIONES_CATALOG = [
     {
-        "id":  "ref_1",
-        "name":  "Pistón",
-        "category":  "Motor",
-        "cost":  350,
-        "price":  480,
-        "stock":  20,
-        "created":  "2026-10-14T09:40:00.000Z"
-    },
-    {
-        "id":  "ref_2",
-        "name":  "Anillos de pistón",
-        "category":  "Motor",
-        "cost":  150,
-        "price":  220,
-        "stock":  20,
-        "created":  "2026-10-14T09:40:00.000Z"
-    },
-    {
-        "id":  "ref_3",
-        "name":  "Biela",
-        "category":  "Motor",
-        "cost":  400,
-        "price":  550,
-        "stock":  15,
-        "created":  "2026-10-14T09:40:00.000Z"
-    },
-    {
-        "id":  "ref_4",
-        "name":  "Cigüeñal",
-        "category":  "Motor",
-        "cost":  2500,
-        "price":  3200,
-        "stock":  8,
-        "created":  "2026-10-14T09:40:00.000Z"
-    },
-    {
-        "id":  "ref_5",
-        "name":  "Árbol de levas",
-        "category":  "Motor",
-        "cost":  1200,
-        "price":  1600,
-        "stock":  8,
-        "created":  "2026-10-14T09:40:00.000Z"
-    },
-    {
-        "id":  "ref_6",
-        "name":  "Válvula de admisión",
-        "category":  "Motor",
-        "cost":  80,
-        "price":  120,
-        "stock":  35,
-        "created":  "2026-10-14T09:40:00.000Z"
-    },
-    {
-        "id":  "ref_7",
-        "name":  "Válvula de escape",
-        "category":  "Motor",
-        "cost":  90,
-        "price":  135,
-        "stock":  35,
-        "created":  "2026-10-14T09:40:00.000Z"
-    },
-    {
-        "id":  "ref_8",
-        "name":  "Culata (Cabeza del motor)",
-        "category":  "Motor",
-        "cost":  3500,
-        "price":  4800,
-        "stock":  4,
-        "created":  "2026-10-14T09:40:00.000Z"
-    },
-    {
-        "id":  "ref_9",
-        "name":  "Junta de culata",
-        "category":  "Motor",
-        "cost":  200,
-        "price":  350,
-        "stock":  20,
-        "created":  "2026-10-14T09:40:00.000Z"
-    },
-    {
-        "id":  "ref_10",
-        "name":  "Bloque del motor",
-        "category":  "Motor",
-        "cost":  8000,
-        "price":  11000,
-        "stock":  0,
-        "created":  "2026-10-14T09:40:00.000Z"
-    },
-    {
-        "id":  "ref_11",
-        "name":  "Cárter",
-        "category":  "Motor",
-        "cost":  600,
-        "price":  850,
-        "stock":  15,
-        "created":  "2026-10-14T09:40:00.000Z"
-    },
-    {
-        "id":  "ref_12",
-        "name":  "Bomba de aceite",
-        "category":  "Motor",
-        "cost":  450,
-        "price":  650,
-        "stock":  15,
-        "created":  "2026-10-14T09:40:00.000Z"
-    },
-    {
-        "id":  "ref_13",
-        "name":  "Filtro de aceite",
-        "category":  "Motor",
-        "cost":  60,
-        "price":  95,
-        "stock":  35,
-        "created":  "2026-10-14T09:40:00.000Z"
-    },
-    {
-        "id":  "ref_14",
-        "name":  "Bomba de agua",
-        "category":  "Motor",
-        "cost":  380,
-        "price":  550,
-        "stock":  15,
-        "created":  "2026-10-14T09:40:00.000Z"
-    },
-    {
-        "id":  "ref_15",
-        "name":  "Radiador",
-        "category":  "Motor",
-        "cost":  1200,
-        "price":  1700,
-        "stock":  8,
-        "created":  "2026-10-14T09:40:00.000Z"
-    },
-    {
-        "id":  "ref_16",
-        "name":  "Termostato",
-        "category":  "Motor",
-        "cost":  150,
-        "price":  250,
-        "stock":  20,
-        "created":  "2026-10-14T09:40:00.000Z"
-    },
-    {
-        "id":  "ref_17",
-        "name":  "Ventilador del radiador",
-        "category":  "Motor",
-        "cost":  500,
-        "price":  750,
-        "stock":  15,
-        "created":  "2026-10-14T09:40:00.000Z"
-    },
-    {
-        "id":  "ref_18",
-        "name":  "Banda de distribución",
-        "category":  "Motor",
-        "cost":  250,
-        "price":  400,
-        "stock":  20,
-        "created":  "2026-10-14T09:40:00.000Z"
-    },
-    {
-        "id":  "ref_19",
-        "name":  "Cadena de distribución",
-        "category":  "Motor",
-        "cost":  450,
-        "price":  680,
-        "stock":  15,
-        "created":  "2026-10-14T09:40:00.000Z"
-    },
-    {
-        "id":  "ref_20",
-        "name":  "Tensor de distribución",
-        "category":  "Motor",
-        "cost":  300,
-        "price":  450,
-        "stock":  20,
-        "created":  "2026-10-14T09:40:00.000Z"
-    },
-    {
-        "id":  "ref_21",
-        "name":  "Carburador",
-        "category":  "Motor",
-        "cost":  800,
-        "price":  1150,
-        "stock":  15,
-        "created":  "2026-10-14T09:40:00.000Z"
-    },
-    {
-        "id":  "ref_22",
-        "name":  "Inyector de combustible",
-        "category":  "Motor",
-        "cost":  350,
-        "price":  500,
-        "stock":  15,
-        "created":  "2026-10-14T09:40:00.000Z"
-    },
-    {
-        "id":  "ref_23",
-        "name":  "Riel de inyectores",
-        "category":  "Motor",
-        "cost":  600,
-        "price":  850,
-        "stock":  15,
-        "created":  "2026-10-14T09:40:00.000Z"
-    },
-    {
-        "id":  "ref_24",
-        "name":  "Bomba de combustible",
-        "category":  "Motor",
-        "cost":  550,
-        "price":  800,
-        "stock":  15,
-        "created":  "2026-10-14T09:40:00.000Z"
-    },
-    {
-        "id":  "ref_25",
-        "name":  "Filtro de combustible",
-        "category":  "Motor",
-        "cost":  80,
-        "price":  130,
-        "stock":  35,
-        "created":  "2026-10-14T09:40:00.000Z"
-    },
-    {
-        "id":  "ref_26",
-        "name":  "Disco de embrague (Clutch)",
-        "category":  "Transmisión",
-        "cost":  450,
-        "price":  650,
-        "stock":  15,
-        "created":  "2026-10-14T09:40:00.000Z"
-    },
-    {
-        "id":  "ref_27",
-        "name":  "Plato de presión",
-        "category":  "Transmisión",
-        "cost":  500,
-        "price":  750,
-        "stock":  15,
-        "created":  "2026-10-14T09:40:00.000Z"
-    },
-    {
-        "id":  "ref_28",
-        "name":  "Collarín de embrague",
-        "category":  "Transmisión",
-        "cost":  250,
-        "price":  380,
-        "stock":  20,
-        "created":  "2026-10-14T09:40:00.000Z"
-    },
-    {
-        "id":  "ref_29",
-        "name":  "Cable de embrague",
-        "category":  "Transmisión",
-        "cost":  120,
-        "price":  190,
-        "stock":  20,
-        "created":  "2026-10-14T09:40:00.000Z"
-    },
-    {
-        "id":  "ref_30",
-        "name":  "Cilindro maestro de embrague",
-        "category":  "Transmisión",
-        "cost":  380,
-        "price":  550,
-        "stock":  15,
-        "created":  "2026-10-14T09:40:00.000Z"
-    },
-    {
-        "id":  "ref_31",
-        "name":  "Caja de cambios",
-        "category":  "Transmisión",
-        "cost":  6000,
-        "price":  8500,
-        "stock":  2,
-        "created":  "2026-10-14T09:40:00.000Z"
-    },
-    {
-        "id":  "ref_32",
-        "name":  "Engranajes de transmisión",
-        "category":  "Transmisión",
-        "cost":  800,
-        "price":  1200,
-        "stock":  15,
-        "created":  "2026-10-14T09:40:00.000Z"
-    },
-    {
-        "id":  "ref_33",
-        "name":  "Sincronizador",
-        "category":  "Transmisión",
-        "cost":  250,
-        "price":  400,
-        "stock":  20,
-        "created":  "2026-10-14T09:40:00.000Z"
-    },
-    {
-        "id":  "ref_34",
-        "name":  "Árbol de transmisión (Cardán)",
-        "category":  "Transmisión",
-        "cost":  1800,
-        "price":  2500,
-        "stock":  8,
-        "created":  "2026-10-14T09:40:00.000Z"
-    },
-    {
-        "id":  "ref_35",
-        "name":  "Diferencial",
-        "category":  "Transmisión",
-        "cost":  3500,
-        "price":  4800,
-        "stock":  4,
-        "created":  "2026-10-14T09:40:00.000Z"
-    },
-    {
-        "id":  "ref_36",
-        "name":  "Eje (Palier)",
-        "category":  "Transmisión",
-        "cost":  900,
-        "price":  1300,
-        "stock":  15,
-        "created":  "2026-10-14T09:40:00.000Z"
-    },
-    {
-        "id":  "ref_37",
-        "name":  "Junta homocinética",
-        "category":  "Transmisión",
-        "cost":  450,
-        "price":  680,
-        "stock":  15,
-        "created":  "2026-10-14T09:40:00.000Z"
-    },
-    {
-        "id":  "ref_38",
-        "name":  "Cadena de transmisión (Motos)",
-        "category":  "Transmisión",
-        "cost":  300,
-        "price":  480,
-        "stock":  20,
-        "created":  "2026-10-14T09:40:00.000Z"
-    },
-    {
-        "id":  "ref_39",
-        "name":  "Piñón (Motos)",
-        "category":  "Transmisión",
-        "cost":  150,
-        "price":  250,
-        "stock":  20,
-        "created":  "2026-10-14T09:40:00.000Z"
-    },
-    {
-        "id":  "ref_40",
-        "name":  "Corona / Sprocket (Motos)",
-        "category":  "Transmisión",
-        "cost":  280,
-        "price":  420,
-        "stock":  20,
-        "created":  "2026-10-14T09:40:00.000Z"
-    },
-    {
-        "id":  "ref_41",
-        "name":  "Pastillas de freno (Balatas)",
-        "category":  "Frenos",
-        "cost":  220,
-        "price":  350,
-        "stock":  20,
-        "created":  "2026-10-14T09:40:00.000Z"
-    },
-    {
-        "id":  "ref_42",
-        "name":  "Disco de freno",
-        "category":  "Frenos",
-        "cost":  400,
-        "price":  600,
-        "stock":  15,
-        "created":  "2026-10-14T09:40:00.000Z"
-    },
-    {
-        "id":  "ref_43",
-        "name":  "Tambor de freno",
-        "category":  "Frenos",
-        "cost":  350,
-        "price":  520,
-        "stock":  15,
-        "created":  "2026-10-14T09:40:00.000Z"
-    },
-    {
-        "id":  "ref_44",
-        "name":  "Zapatas de freno",
-        "category":  "Frenos",
-        "cost":  180,
-        "price":  280,
-        "stock":  20,
-        "created":  "2026-10-14T09:40:00.000Z"
-    },
-    {
-        "id":  "ref_45",
-        "name":  "Caliper (Mordaza)",
-        "category":  "Frenos",
-        "cost":  650,
-        "price":  900,
-        "stock":  15,
-        "created":  "2026-10-14T09:40:00.000Z"
-    },
-    {
-        "id":  "ref_46",
-        "name":  "Cilindro maestro de frenos",
-        "category":  "Frenos",
-        "cost":  450,
-        "price":  650,
-        "stock":  15,
-        "created":  "2026-10-14T09:40:00.000Z"
-    },
-    {
-        "id":  "ref_47",
-        "name":  "Líneas de freno (Latiguillos)",
-        "category":  "Frenos",
-        "cost":  150,
-        "price":  250,
-        "stock":  20,
-        "created":  "2026-10-14T09:40:00.000Z"
-    },
-    {
-        "id":  "ref_48",
-        "name":  "Servofreno (Booster)",
-        "category":  "Frenos",
-        "cost":  1200,
-        "price":  1800,
-        "stock":  8,
-        "created":  "2026-10-14T09:40:00.000Z"
-    },
-    {
-        "id":  "ref_49",
-        "name":  "Módulo ABS",
-        "category":  "Frenos",
-        "cost":  4500,
-        "price":  6200,
-        "stock":  0,
-        "created":  "2026-10-14T09:40:00.000Z"
-    },
-    {
-        "id":  "ref_50",
-        "name":  "Sensor de velocidad ABS",
-        "category":  "Frenos",
-        "cost":  350,
-        "price":  550,
-        "stock":  0,
-        "created":  "2026-10-14T09:40:00.000Z"
-    },
-    {
-        "id":  "ref_51",
-        "name":  "Pedal de freno",
-        "category":  "Frenos",
-        "cost":  250,
-        "price":  400,
-        "stock":  20,
-        "created":  "2026-10-14T09:40:00.000Z"
-    },
-    {
-        "id":  "ref_52",
-        "name":  "Manija de freno (Motos)",
-        "category":  "Frenos",
-        "cost":  80,
-        "price":  150,
-        "stock":  20,
-        "created":  "2026-10-14T09:40:00.000Z"
-    },
-    {
-        "id":  "ref_53",
-        "name":  "Cable de freno",
-        "category":  "Frenos",
-        "cost":  90,
-        "price":  160,
-        "stock":  20,
-        "created":  "2026-10-14T09:40:00.000Z"
-    },
-    {
-        "id":  "ref_54",
-        "name":  "Purgador de freno",
-        "category":  "Frenos",
-        "cost":  20,
-        "price":  45,
-        "stock":  35,
-        "created":  "2026-10-14T09:40:00.000Z"
-    },
-    {
-        "id":  "ref_55",
-        "name":  "Amortiguador delantero",
-        "category":  "Suspensión/Dirección",
-        "cost":  650,
-        "price":  950,
-        "stock":  15,
-        "created":  "2026-10-14T09:40:00.000Z"
-    },
-    {
-        "id":  "ref_56",
-        "name":  "Amortiguador trasero",
-        "category":  "Suspensión/Dirección",
-        "cost":  550,
-        "price":  850,
-        "stock":  15,
-        "created":  "2026-10-14T09:40:00.000Z"
-    },
-    {
-        "id":  "ref_57",
-        "name":  "Resorte helicoidal (Muelle)",
-        "category":  "Suspensión/Dirección",
-        "cost":  350,
-        "price":  550,
-        "stock":  15,
-        "created":  "2026-10-14T09:40:00.000Z"
-    },
-    {
-        "id":  "ref_58",
-        "name":  "Horquilla de suspensión",
-        "category":  "Suspensión/Dirección",
-        "cost":  480,
-        "price":  720,
-        "stock":  15,
-        "created":  "2026-10-14T09:40:00.000Z"
-    },
-    {
-        "id":  "ref_59",
-        "name":  "Rótula",
-        "category":  "Suspensión/Dirección",
-        "cost":  180,
-        "price":  290,
-        "stock":  20,
-        "created":  "2026-10-14T09:40:00.000Z"
-    },
-    {
-        "id":  "ref_60",
-        "name":  "Buje de suspensión",
-        "category":  "Suspensión/Dirección",
-        "cost":  80,
-        "price":  140,
-        "stock":  35,
-        "created":  "2026-10-14T09:40:00.000Z"
-    },
-    {
-        "id":  "ref_61",
-        "name":  "Barra estabilizadora",
-        "category":  "Suspensión/Dirección",
-        "cost":  450,
-        "price":  680,
-        "stock":  15,
-        "created":  "2026-10-14T09:40:00.000Z"
-    },
-    {
-        "id":  "ref_62",
-        "name":  "Bieleta",
-        "category":  "Suspensión/Dirección",
-        "cost":  150,
-        "price":  260,
-        "stock":  20,
-        "created":  "2026-10-14T09:40:00.000Z"
-    },
-    {
-        "id":  "ref_63",
-        "name":  "Cremallera de dirección",
-        "category":  "Suspensión/Dirección",
-        "cost":  2200,
-        "price":  3100,
-        "stock":  8,
-        "created":  "2026-10-14T09:40:00.000Z"
-    },
-    {
-        "id":  "ref_64",
-        "name":  "Bomba de dirección hidráulica",
-        "category":  "Suspensión/Dirección",
-        "cost":  1100,
-        "price":  1600,
-        "stock":  8,
-        "created":  "2026-10-14T09:40:00.000Z"
-    },
-    {
-        "id":  "ref_65",
-        "name":  "Terminal de dirección",
-        "category":  "Suspensión/Dirección",
-        "cost":  160,
-        "price":  250,
-        "stock":  20,
-        "created":  "2026-10-14T09:40:00.000Z"
-    },
-    {
-        "id":  "ref_66",
-        "name":  "Columna de dirección",
-        "category":  "Suspensión/Dirección",
-        "cost":  1500,
-        "price":  2200,
-        "stock":  8,
-        "created":  "2026-10-14T09:40:00.000Z"
-    },
-    {
-        "id":  "ref_67",
-        "name":  "Volante",
-        "category":  "Suspensión/Dirección",
-        "cost":  800,
-        "price":  1300,
-        "stock":  15,
-        "created":  "2026-10-14T09:40:00.000Z"
-    },
-    {
-        "id":  "ref_68",
-        "name":  "Manillar (Motos)",
-        "category":  "Suspensión/Dirección",
-        "cost":  350,
-        "price":  550,
-        "stock":  15,
-        "created":  "2026-10-14T09:40:00.000Z"
-    },
-    {
-        "id":  "ref_69",
-        "name":  "Telescopios de suspensión (Motos)",
-        "category":  "Suspensión/Dirección",
-        "cost":  1200,
-        "price":  1800,
-        "stock":  8,
-        "created":  "2026-10-14T09:40:00.000Z"
-    },
-    {
-        "id":  "ref_70",
-        "name":  "Balero de rueda (Rodamiento)",
-        "category":  "Suspensión/Dirección",
-        "cost":  220,
-        "price":  350,
-        "stock":  20,
-        "created":  "2026-10-14T09:40:00.000Z"
-    },
-    {
-        "id":  "ref_71",
-        "name":  "Batería",
-        "category":  "Sistema Eléctrico",
-        "cost":  1100,
-        "price":  1650,
-        "stock":  8,
-        "created":  "2026-10-14T09:40:00.000Z"
-    },
-    {
-        "id":  "ref_72",
-        "name":  "Alternador",
-        "category":  "Sistema Eléctrico",
-        "cost":  1800,
-        "price":  2600,
-        "stock":  8,
-        "created":  "2026-10-14T09:40:00.000Z"
-    },
-    {
-        "id":  "ref_73",
-        "name":  "Estator (Motos)",
-        "category":  "Sistema Eléctrico",
-        "cost":  450,
-        "price":  700,
-        "stock":  15,
-        "created":  "2026-10-14T09:40:00.000Z"
-    },
-    {
-        "id":  "ref_74",
-        "name":  "Motor de arranque (Marcha)",
-        "category":  "Sistema Eléctrico",
-        "cost":  1200,
-        "price":  1750,
-        "stock":  8,
-        "created":  "2026-10-14T09:40:00.000Z"
-    },
-    {
-        "id":  "ref_75",
-        "name":  "Bujía",
-        "category":  "Sistema Eléctrico",
-        "cost":  40,
-        "price":  75,
-        "stock":  35,
-        "created":  "2026-10-14T09:40:00.000Z"
-    },
-    {
-        "id":  "ref_76",
-        "name":  "Bobina de encendido",
-        "category":  "Sistema Eléctrico",
-        "cost":  350,
-        "price":  550,
-        "stock":  15,
-        "created":  "2026-10-14T09:40:00.000Z"
-    },
-    {
-        "id":  "ref_77",
-        "name":  "Cables de bujía",
-        "category":  "Sistema Eléctrico",
-        "cost":  220,
-        "price":  380,
-        "stock":  20,
-        "created":  "2026-10-14T09:40:00.000Z"
-    },
-    {
-        "id":  "ref_78",
-        "name":  "Módulo de control del motor (ECU)",
-        "category":  "Sistema Eléctrico",
-        "cost":  3500,
-        "price":  5200,
-        "stock":  4,
-        "created":  "2026-10-14T09:40:00.000Z"
-    },
-    {
-        "id":  "ref_79",
-        "name":  "Caja de fusibles",
-        "category":  "Sistema Eléctrico",
-        "cost":  450,
-        "price":  700,
-        "stock":  15,
-        "created":  "2026-10-14T09:40:00.000Z"
-    },
-    {
-        "id":  "ref_80",
-        "name":  "Relé (Relay)",
-        "category":  "Sistema Eléctrico",
-        "cost":  60,
-        "price":  110,
-        "stock":  35,
-        "created":  "2026-10-14T09:40:00.000Z"
-    },
-    {
-        "id":  "ref_81",
-        "name":  "Interruptor de encendido (Switch)",
-        "category":  "Sistema Eléctrico",
-        "cost":  180,
-        "price":  290,
-        "stock":  20,
-        "created":  "2026-10-14T09:40:00.000Z"
-    },
-    {
-        "id":  "ref_82",
-        "name":  "Faro delantero",
-        "category":  "Sistema Eléctrico",
-        "cost":  850,
-        "price":  1300,
-        "stock":  15,
-        "created":  "2026-10-14T09:40:00.000Z"
-    },
-    {
-        "id":  "ref_83",
-        "name":  "Calavera (Faro trasero)",
-        "category":  "Sistema Eléctrico",
-        "cost":  450,
-        "price":  700,
-        "stock":  15,
-        "created":  "2026-10-14T09:40:00.000Z"
-    },
-    {
-        "id":  "ref_84",
-        "name":  "Foco direccional",
-        "category":  "Sistema Eléctrico",
-        "cost":  15,
-        "price":  35,
-        "stock":  35,
-        "created":  "2026-10-14T09:40:00.000Z"
-    },
-    {
-        "id":  "ref_85",
-        "name":  "Sensor de oxígeno (Sonda Lambda)",
-        "category":  "Sistema Eléctrico",
-        "cost":  550,
-        "price":  850,
-        "stock":  15,
-        "created":  "2026-10-14T09:40:00.000Z"
-    },
-    {
-        "id":  "ref_86",
-        "name":  "Sensor MAF",
-        "category":  "Sistema Eléctrico",
-        "cost":  650,
-        "price":  1000,
-        "stock":  15,
-        "created":  "2026-10-14T09:40:00.000Z"
-    },
-    {
-        "id":  "ref_87",
-        "name":  "Claxon (Bocina)",
-        "category":  "Sistema Eléctrico",
-        "cost":  150,
-        "price":  250,
-        "stock":  20,
-        "created":  "2026-10-14T09:40:00.000Z"
-    },
-    {
-        "id":  "ref_88",
-        "name":  "Fascia delantera (Defensa)",
-        "category":  "Carrocería y Otros",
-        "cost":  1200,
-        "price":  1850,
-        "stock":  8,
-        "created":  "2026-10-14T09:40:00.000Z"
-    },
-    {
-        "id":  "ref_89",
-        "name":  "Fascia trasera",
-        "category":  "Carrocería y Otros",
-        "cost":  1100,
-        "price":  1700,
-        "stock":  8,
-        "created":  "2026-10-14T09:40:00.000Z"
-    },
-    {
-        "id":  "ref_90",
-        "name":  "Cofre (Capó)",
-        "category":  "Carrocería y Otros",
-        "cost":  1800,
-        "price":  2800,
-        "stock":  8,
-        "created":  "2026-10-14T09:40:00.000Z"
-    },
-    {
-        "id":  "ref_91",
-        "name":  "Puerta",
-        "category":  "Carrocería y Otros",
-        "cost":  2500,
-        "price":  3800,
-        "stock":  8,
-        "created":  "2026-10-14T09:40:00.000Z"
-    },
-    {
-        "id":  "ref_92",
-        "name":  "Espejo retrovisor interior",
-        "category":  "Carrocería y Otros",
-        "cost":  150,
-        "price":  280,
-        "stock":  20,
-        "created":  "2026-10-14T09:40:00.000Z"
-    },
-    {
-        "id":  "ref_93",
-        "name":  "Espejo lateral",
-        "category":  "Carrocería y Otros",
-        "cost":  450,
-        "price":  750,
-        "stock":  15,
-        "created":  "2026-10-14T09:40:00.000Z"
-    },
-    {
-        "id":  "ref_94",
-        "name":  "Parabrisas",
-        "category":  "Carrocería y Otros",
-        "cost":  1500,
-        "price":  2400,
-        "stock":  8,
-        "created":  "2026-10-14T09:40:00.000Z"
-    },
-    {
-        "id":  "ref_95",
-        "name":  "Ventanilla lateral",
-        "category":  "Carrocería y Otros",
-        "cost":  600,
-        "price":  950,
-        "stock":  15,
-        "created":  "2026-10-14T09:40:00.000Z"
-    },
-    {
-        "id":  "ref_96",
-        "name":  "Asiento",
-        "category":  "Carrocería y Otros",
-        "cost":  1800,
-        "price":  2800,
-        "stock":  8,
-        "created":  "2026-10-14T09:40:00.000Z"
-    },
-    {
-        "id":  "ref_97",
-        "name":  "Cinturón de seguridad",
-        "category":  "Carrocería y Otros",
-        "cost":  350,
-        "price":  550,
-        "stock":  15,
-        "created":  "2026-10-14T09:40:00.000Z"
-    },
-    {
-        "id":  "ref_98",
-        "name":  "Tanque de combustible",
-        "category":  "Carrocería y Otros",
-        "cost":  1600,
-        "price":  2500,
-        "stock":  8,
-        "created":  "2026-10-14T09:40:00.000Z"
-    },
-    {
-        "id":  "ref_99",
-        "name":  "Rin (Aro de rueda)",
-        "category":  "Carrocería y Otros",
-        "cost":  800,
-        "price":  1250,
-        "stock":  15,
-        "created":  "2026-10-14T09:40:00.000Z"
-    },
-    {
-        "id":  "ref_100",
-        "name":  "Neumático (Llanta)",
-        "category":  "Carrocería y Otros",
-        "cost":  1100,
-        "price":  1650,
-        "stock":  8,
-        "created":  "2026-10-14T09:40:00.000Z"
+        "id": "ref_1",
+        "name": "Pistón",
+        "category": "Motor",
+        "cost": 350,
+        "price": 480,
+        "stock": 20,
+        "created": "2026-10-14T09:40:00.000Z",
+        "image": "fotos_recolectadas/1_pist_n.jpg"
+    },
+    {
+        "id": "ref_2",
+        "name": "Anillos de pistón",
+        "category": "Motor",
+        "cost": 150,
+        "price": 220,
+        "stock": 20,
+        "created": "2026-10-14T09:40:00.000Z",
+        "image": "fotos_recolectadas/2_anillos_de_pist_n.jpg"
+    },
+    {
+        "id": "ref_3",
+        "name": "Biela",
+        "category": "Motor",
+        "cost": 400,
+        "price": 550,
+        "stock": 15,
+        "created": "2026-10-14T09:40:00.000Z",
+        "image": "fotos_recolectadas/3_biela.png"
+    },
+    {
+        "id": "ref_4",
+        "name": "Cigüeñal",
+        "category": "Motor",
+        "cost": 2500,
+        "price": 3200,
+        "stock": 8,
+        "created": "2026-10-14T09:40:00.000Z",
+        "image": "fotos_recolectadas/4_cig_e_al.jpg"
+    },
+    {
+        "id": "ref_5",
+        "name": "Árbol de levas",
+        "category": "Motor",
+        "cost": 1200,
+        "price": 1600,
+        "stock": 8,
+        "created": "2026-10-14T09:40:00.000Z",
+        "image": "fotos_recolectadas/5__rbol_de_levas.jpg"
+    },
+    {
+        "id": "ref_6",
+        "name": "Válvula de admisión",
+        "category": "Motor",
+        "cost": 80,
+        "price": 120,
+        "stock": 35,
+        "created": "2026-10-14T09:40:00.000Z",
+        "image": "fotos_recolectadas/6_v_lvula_de_admisi_n.jpeg"
+    },
+    {
+        "id": "ref_7",
+        "name": "Válvula de escape",
+        "category": "Motor",
+        "cost": 90,
+        "price": 135,
+        "stock": 35,
+        "created": "2026-10-14T09:40:00.000Z",
+        "image": "fotos_recolectadas/7_v_lvula_de_escape.png"
+    },
+    {
+        "id": "ref_8",
+        "name": "Culata (Cabeza del motor)",
+        "category": "Motor",
+        "cost": 3500,
+        "price": 4800,
+        "stock": 4,
+        "created": "2026-10-14T09:40:00.000Z",
+        "image": "fotos_recolectadas/8_culata__cabeza_del_motor_.jpg"
+    },
+    {
+        "id": "ref_9",
+        "name": "Junta de culata",
+        "category": "Motor",
+        "cost": 200,
+        "price": 350,
+        "stock": 20,
+        "created": "2026-10-14T09:40:00.000Z",
+        "image": "fotos_recolectadas/9_junta_de_culata.jpg"
+    },
+    {
+        "id": "ref_10",
+        "name": "Bloque del motor",
+        "category": "Motor",
+        "cost": 8000,
+        "price": 11000,
+        "stock": 0,
+        "created": "2026-10-14T09:40:00.000Z",
+        "image": "fotos_recolectadas/10_bloque_del_motor.jpg"
+    },
+    {
+        "id": "ref_11",
+        "name": "Cárter",
+        "category": "Motor",
+        "cost": 600,
+        "price": 850,
+        "stock": 15,
+        "created": "2026-10-14T09:40:00.000Z",
+        "image": "fotos_recolectadas/11_c_rter.jpg"
+    },
+    {
+        "id": "ref_12",
+        "name": "Bomba de aceite",
+        "category": "Motor",
+        "cost": 450,
+        "price": 650,
+        "stock": 15,
+        "created": "2026-10-14T09:40:00.000Z",
+        "image": "fotos_recolectadas/12_bomba_de_aceite.png"
+    },
+    {
+        "id": "ref_13",
+        "name": "Filtro de aceite",
+        "category": "Motor",
+        "cost": 60,
+        "price": 95,
+        "stock": 35,
+        "created": "2026-10-14T09:40:00.000Z",
+        "image": "fotos_recolectadas/13_filtro_de_aceite.jpg"
+    },
+    {
+        "id": "ref_14",
+        "name": "Bomba de agua",
+        "category": "Motor",
+        "cost": 380,
+        "price": 550,
+        "stock": 15,
+        "created": "2026-10-14T09:40:00.000Z",
+        "image": "fotos_recolectadas/14_bomba_de_agua.png"
+    },
+    {
+        "id": "ref_15",
+        "name": "Radiador",
+        "category": "Motor",
+        "cost": 1200,
+        "price": 1700,
+        "stock": 8,
+        "created": "2026-10-14T09:40:00.000Z",
+        "image": "fotos_recolectadas/15_radiador.png"
+    },
+    {
+        "id": "ref_16",
+        "name": "Termostato",
+        "category": "Motor",
+        "cost": 150,
+        "price": 250,
+        "stock": 20,
+        "created": "2026-10-14T09:40:00.000Z",
+        "image": "fotos_recolectadas/16_termostato.jpg"
+    },
+    {
+        "id": "ref_17",
+        "name": "Ventilador del radiador",
+        "category": "Motor",
+        "cost": 500,
+        "price": 750,
+        "stock": 15,
+        "created": "2026-10-14T09:40:00.000Z",
+        "image": "fotos_recolectadas/17_ventilador_del_radiador.jpeg"
+    },
+    {
+        "id": "ref_18",
+        "name": "Banda de distribución",
+        "category": "Motor",
+        "cost": 250,
+        "price": 400,
+        "stock": 20,
+        "created": "2026-10-14T09:40:00.000Z",
+        "image": "fotos_recolectadas/18_banda_de_distribuci_n.jpeg"
+    },
+    {
+        "id": "ref_19",
+        "name": "Cadena de distribución",
+        "category": "Motor",
+        "cost": 450,
+        "price": 680,
+        "stock": 15,
+        "created": "2026-10-14T09:40:00.000Z",
+        "image": "fotos_recolectadas/19_cadena_de_distribuci_n.jpg"
+    },
+    {
+        "id": "ref_20",
+        "name": "Tensor de distribución",
+        "category": "Motor",
+        "cost": 300,
+        "price": 450,
+        "stock": 20,
+        "created": "2026-10-14T09:40:00.000Z",
+        "image": "fotos_recolectadas/20_tensor_de_distribuci_n.jpg"
+    },
+    {
+        "id": "ref_21",
+        "name": "Carburador",
+        "category": "Motor",
+        "cost": 800,
+        "price": 1150,
+        "stock": 15,
+        "created": "2026-10-14T09:40:00.000Z",
+        "image": "fotos_recolectadas/21_carburador.webp"
+    },
+    {
+        "id": "ref_22",
+        "name": "Inyector de combustible",
+        "category": "Motor",
+        "cost": 350,
+        "price": 500,
+        "stock": 15,
+        "created": "2026-10-14T09:40:00.000Z",
+        "image": "fotos_recolectadas/22_inyector_de_combustible.webp"
+    },
+    {
+        "id": "ref_23",
+        "name": "Riel de inyectores",
+        "category": "Motor",
+        "cost": 600,
+        "price": 850,
+        "stock": 15,
+        "created": "2026-10-14T09:40:00.000Z",
+        "image": "fotos_recolectadas/23_riel_de_inyectores.jpg"
+    },
+    {
+        "id": "ref_24",
+        "name": "Bomba de combustible",
+        "category": "Motor",
+        "cost": 550,
+        "price": 800,
+        "stock": 15,
+        "created": "2026-10-14T09:40:00.000Z",
+        "image": "fotos_recolectadas/24_bomba_de_combustible.jpg"
+    },
+    {
+        "id": "ref_25",
+        "name": "Filtro de combustible",
+        "category": "Motor",
+        "cost": 80,
+        "price": 130,
+        "stock": 35,
+        "created": "2026-10-14T09:40:00.000Z",
+        "image": "fotos_recolectadas/25_filtro_de_combustible.jpg"
+    },
+    {
+        "id": "ref_26",
+        "name": "Disco de embrague (Clutch)",
+        "category": "Transmisión",
+        "cost": 450,
+        "price": 650,
+        "stock": 15,
+        "created": "2026-10-14T09:40:00.000Z",
+        "image": "fotos_recolectadas/26_disco_de_embrague__clutch_.jpg"
+    },
+    {
+        "id": "ref_27",
+        "name": "Plato de presión",
+        "category": "Transmisión",
+        "cost": 500,
+        "price": 750,
+        "stock": 15,
+        "created": "2026-10-14T09:40:00.000Z",
+        "image": "fotos_recolectadas/27_plato_de_presi_n.jpg"
+    },
+    {
+        "id": "ref_28",
+        "name": "Collarín de embrague",
+        "category": "Transmisión",
+        "cost": 250,
+        "price": 380,
+        "stock": 20,
+        "created": "2026-10-14T09:40:00.000Z",
+        "image": "fotos_recolectadas/28_collar_n_de_embrague.jpg"
+    },
+    {
+        "id": "ref_29",
+        "name": "Cable de embrague",
+        "category": "Transmisión",
+        "cost": 120,
+        "price": 190,
+        "stock": 20,
+        "created": "2026-10-14T09:40:00.000Z",
+        "image": "fotos_recolectadas/29_cable_de_embrague.webp"
+    },
+    {
+        "id": "ref_30",
+        "name": "Cilindro maestro de embrague",
+        "category": "Transmisión",
+        "cost": 380,
+        "price": 550,
+        "stock": 15,
+        "created": "2026-10-14T09:40:00.000Z",
+        "image": "fotos_recolectadas/30_cilindro_maestro_de_embrague.png"
+    },
+    {
+        "id": "ref_31",
+        "name": "Caja de cambios",
+        "category": "Transmisión",
+        "cost": 6000,
+        "price": 8500,
+        "stock": 2,
+        "created": "2026-10-14T09:40:00.000Z",
+        "image": "fotos_recolectadas/31_caja_de_cambios.jpg"
+    },
+    {
+        "id": "ref_32",
+        "name": "Engranajes de transmisión",
+        "category": "Transmisión",
+        "cost": 800,
+        "price": 1200,
+        "stock": 15,
+        "created": "2026-10-14T09:40:00.000Z",
+        "image": "fotos_recolectadas/32_engranajes_de_transmisi_n.jpg"
+    },
+    {
+        "id": "ref_33",
+        "name": "Sincronizador",
+        "category": "Transmisión",
+        "cost": 250,
+        "price": 400,
+        "stock": 20,
+        "created": "2026-10-14T09:40:00.000Z",
+        "image": "fotos_recolectadas/33_sincronizador.jpg"
+    },
+    {
+        "id": "ref_34",
+        "name": "Árbol de transmisión (Cardán)",
+        "category": "Transmisión",
+        "cost": 1800,
+        "price": 2500,
+        "stock": 8,
+        "created": "2026-10-14T09:40:00.000Z",
+        "image": "fotos_recolectadas/34__rbol_de_transmisi_n__card_n_.jpg"
+    },
+    {
+        "id": "ref_35",
+        "name": "Diferencial",
+        "category": "Transmisión",
+        "cost": 3500,
+        "price": 4800,
+        "stock": 4,
+        "created": "2026-10-14T09:40:00.000Z",
+        "image": "fotos_recolectadas/35_diferencial.jpg"
+    },
+    {
+        "id": "ref_36",
+        "name": "Eje (Palier)",
+        "category": "Transmisión",
+        "cost": 900,
+        "price": 1300,
+        "stock": 15,
+        "created": "2026-10-14T09:40:00.000Z",
+        "image": "fotos_recolectadas/36_eje__palier_.webp"
+    },
+    {
+        "id": "ref_37",
+        "name": "Junta homocinética",
+        "category": "Transmisión",
+        "cost": 450,
+        "price": 680,
+        "stock": 15,
+        "created": "2026-10-14T09:40:00.000Z",
+        "image": "fotos_recolectadas/37_junta_homocin_tica.jpg"
+    },
+    {
+        "id": "ref_38",
+        "name": "Cadena de transmisión (Motos)",
+        "category": "Transmisión",
+        "cost": 300,
+        "price": 480,
+        "stock": 20,
+        "created": "2026-10-14T09:40:00.000Z",
+        "image": "fotos_recolectadas/38_cadena_de_transmisi_n__motos_.jpg"
+    },
+    {
+        "id": "ref_39",
+        "name": "Piñón (Motos)",
+        "category": "Transmisión",
+        "cost": 150,
+        "price": 250,
+        "stock": 20,
+        "created": "2026-10-14T09:40:00.000Z",
+        "image": "fotos_recolectadas/39_pi__n__motos_.webp"
+    },
+    {
+        "id": "ref_40",
+        "name": "Corona / Sprocket (Motos)",
+        "category": "Transmisión",
+        "cost": 280,
+        "price": 420,
+        "stock": 20,
+        "created": "2026-10-14T09:40:00.000Z",
+        "image": "fotos_recolectadas/40_corona___sprocket__motos_.jpg"
+    },
+    {
+        "id": "ref_41",
+        "name": "Pastillas de freno (Balatas)",
+        "category": "Frenos",
+        "cost": 220,
+        "price": 350,
+        "stock": 20,
+        "created": "2026-10-14T09:40:00.000Z",
+        "image": "fotos_recolectadas/41_pastillas_de_freno__balatas_.jpg"
+    },
+    {
+        "id": "ref_42",
+        "name": "Disco de freno",
+        "category": "Frenos",
+        "cost": 400,
+        "price": 600,
+        "stock": 15,
+        "created": "2026-10-14T09:40:00.000Z",
+        "image": "fotos_recolectadas/42_disco_de_freno.jpg"
+    },
+    {
+        "id": "ref_43",
+        "name": "Tambor de freno",
+        "category": "Frenos",
+        "cost": 350,
+        "price": 520,
+        "stock": 15,
+        "created": "2026-10-14T09:40:00.000Z",
+        "image": "fotos_recolectadas/43_tambor_de_freno.jpg"
+    },
+    {
+        "id": "ref_44",
+        "name": "Zapatas de freno",
+        "category": "Frenos",
+        "cost": 180,
+        "price": 280,
+        "stock": 20,
+        "created": "2026-10-14T09:40:00.000Z",
+        "image": "fotos_recolectadas/44_zapatas_de_freno.jpg"
+    },
+    {
+        "id": "ref_45",
+        "name": "Caliper (Mordaza)",
+        "category": "Frenos",
+        "cost": 650,
+        "price": 900,
+        "stock": 15,
+        "created": "2026-10-14T09:40:00.000Z",
+        "image": "fotos_recolectadas/45_caliper__mordaza_.jpg"
+    },
+    {
+        "id": "ref_46",
+        "name": "Cilindro maestro de frenos",
+        "category": "Frenos",
+        "cost": 450,
+        "price": 650,
+        "stock": 15,
+        "created": "2026-10-14T09:40:00.000Z",
+        "image": "fotos_recolectadas/46_cilindro_maestro_de_frenos.webp"
+    },
+    {
+        "id": "ref_47",
+        "name": "Líneas de freno (Latiguillos)",
+        "category": "Frenos",
+        "cost": 150,
+        "price": 250,
+        "stock": 20,
+        "created": "2026-10-14T09:40:00.000Z",
+        "image": "fotos_recolectadas/47_l_neas_de_freno__latiguillos_.jpg"
+    },
+    {
+        "id": "ref_48",
+        "name": "Servofreno (Booster)",
+        "category": "Frenos",
+        "cost": 1200,
+        "price": 1800,
+        "stock": 8,
+        "created": "2026-10-14T09:40:00.000Z",
+        "image": "fotos_recolectadas/48_servofreno__booster_.webp"
+    },
+    {
+        "id": "ref_49",
+        "name": "Módulo ABS",
+        "category": "Frenos",
+        "cost": 4500,
+        "price": 6200,
+        "stock": 0,
+        "created": "2026-10-14T09:40:00.000Z",
+        "image": "fotos_recolectadas/49_m_dulo_abs.jpg"
+    },
+    {
+        "id": "ref_50",
+        "name": "Sensor de velocidad ABS",
+        "category": "Frenos",
+        "cost": 350,
+        "price": 550,
+        "stock": 0,
+        "created": "2026-10-14T09:40:00.000Z",
+        "image": "fotos_recolectadas/50_sensor_de_velocidad_abs.jpg"
+    },
+    {
+        "id": "ref_51",
+        "name": "Pedal de freno",
+        "category": "Frenos",
+        "cost": 250,
+        "price": 400,
+        "stock": 20,
+        "created": "2026-10-14T09:40:00.000Z",
+        "image": "fotos_recolectadas/51_pedal_de_freno.jpg"
+    },
+    {
+        "id": "ref_52",
+        "name": "Manija de freno (Motos)",
+        "category": "Frenos",
+        "cost": 80,
+        "price": 150,
+        "stock": 20,
+        "created": "2026-10-14T09:40:00.000Z",
+        "image": "fotos_recolectadas/52_manija_de_freno__motos_.jpeg"
+    },
+    {
+        "id": "ref_53",
+        "name": "Cable de freno",
+        "category": "Frenos",
+        "cost": 90,
+        "price": 160,
+        "stock": 20,
+        "created": "2026-10-14T09:40:00.000Z",
+        "image": "fotos_recolectadas/53_cable_de_freno.webp"
+    },
+    {
+        "id": "ref_54",
+        "name": "Purgador de freno",
+        "category": "Frenos",
+        "cost": 20,
+        "price": 45,
+        "stock": 35,
+        "created": "2026-10-14T09:40:00.000Z",
+        "image": "fotos_recolectadas/54_purgador_de_freno.jpg"
+    },
+    {
+        "id": "ref_55",
+        "name": "Amortiguador delantero",
+        "category": "Suspensión/Dirección",
+        "cost": 650,
+        "price": 950,
+        "stock": 15,
+        "created": "2026-10-14T09:40:00.000Z",
+        "image": "fotos_recolectadas/55_amortiguador_delantero.jpg"
+    },
+    {
+        "id": "ref_56",
+        "name": "Amortiguador trasero",
+        "category": "Suspensión/Dirección",
+        "cost": 550,
+        "price": 850,
+        "stock": 15,
+        "created": "2026-10-14T09:40:00.000Z",
+        "image": "fotos_recolectadas/56_amortiguador_trasero.jpg"
+    },
+    {
+        "id": "ref_57",
+        "name": "Resorte helicoidal (Muelle)",
+        "category": "Suspensión/Dirección",
+        "cost": 350,
+        "price": 550,
+        "stock": 15,
+        "created": "2026-10-14T09:40:00.000Z",
+        "image": "fotos_recolectadas/57_resorte_helicoidal__muelle_.jpg"
+    },
+    {
+        "id": "ref_58",
+        "name": "Horquilla de suspensión",
+        "category": "Suspensión/Dirección",
+        "cost": 480,
+        "price": 720,
+        "stock": 15,
+        "created": "2026-10-14T09:40:00.000Z",
+        "image": "fotos_recolectadas/58_horquilla_de_suspensi_n.jpg"
+    },
+    {
+        "id": "ref_59",
+        "name": "Rótula",
+        "category": "Suspensión/Dirección",
+        "cost": 180,
+        "price": 290,
+        "stock": 20,
+        "created": "2026-10-14T09:40:00.000Z",
+        "image": "fotos_recolectadas/59_r_tula.jpg"
+    },
+    {
+        "id": "ref_60",
+        "name": "Buje de suspensión",
+        "category": "Suspensión/Dirección",
+        "cost": 80,
+        "price": 140,
+        "stock": 35,
+        "created": "2026-10-14T09:40:00.000Z",
+        "image": "fotos_recolectadas/60_buje_de_suspensi_n.jpg"
+    },
+    {
+        "id": "ref_61",
+        "name": "Barra estabilizadora",
+        "category": "Suspensión/Dirección",
+        "cost": 450,
+        "price": 680,
+        "stock": 15,
+        "created": "2026-10-14T09:40:00.000Z",
+        "image": "fotos_recolectadas/61_barra_estabilizadora.jpg"
+    },
+    {
+        "id": "ref_62",
+        "name": "Bieleta",
+        "category": "Suspensión/Dirección",
+        "cost": 150,
+        "price": 260,
+        "stock": 20,
+        "created": "2026-10-14T09:40:00.000Z",
+        "image": "fotos_recolectadas/62_bieleta.jpg"
+    },
+    {
+        "id": "ref_63",
+        "name": "Cremallera de dirección",
+        "category": "Suspensión/Dirección",
+        "cost": 2200,
+        "price": 3100,
+        "stock": 8,
+        "created": "2026-10-14T09:40:00.000Z",
+        "image": "fotos_recolectadas/63_cremallera_de_direcci_n.jpg"
+    },
+    {
+        "id": "ref_64",
+        "name": "Bomba de dirección hidráulica",
+        "category": "Suspensión/Dirección",
+        "cost": 1100,
+        "price": 1600,
+        "stock": 8,
+        "created": "2026-10-14T09:40:00.000Z",
+        "image": "fotos_recolectadas/64_bomba_de_direcci_n_hidr_ulica.jpg"
+    },
+    {
+        "id": "ref_65",
+        "name": "Terminal de dirección",
+        "category": "Suspensión/Dirección",
+        "cost": 160,
+        "price": 250,
+        "stock": 20,
+        "created": "2026-10-14T09:40:00.000Z",
+        "image": "fotos_recolectadas/65_terminal_de_direcci_n.jpg"
+    },
+    {
+        "id": "ref_66",
+        "name": "Columna de dirección",
+        "category": "Suspensión/Dirección",
+        "cost": 1500,
+        "price": 2200,
+        "stock": 8,
+        "created": "2026-10-14T09:40:00.000Z",
+        "image": "fotos_recolectadas/66_columna_de_direcci_n.jpg"
+    },
+    {
+        "id": "ref_67",
+        "name": "Volante",
+        "category": "Suspensión/Dirección",
+        "cost": 800,
+        "price": 1300,
+        "stock": 15,
+        "created": "2026-10-14T09:40:00.000Z",
+        "image": "fotos_recolectadas/67_volante.jpg"
+    },
+    {
+        "id": "ref_68",
+        "name": "Manillar (Motos)",
+        "category": "Suspensión/Dirección",
+        "cost": 350,
+        "price": 550,
+        "stock": 15,
+        "created": "2026-10-14T09:40:00.000Z",
+        "image": "fotos_recolectadas/68_manillar__motos_.jpg"
+    },
+    {
+        "id": "ref_69",
+        "name": "Telescopios de suspensión (Motos)",
+        "category": "Suspensión/Dirección",
+        "cost": 1200,
+        "price": 1800,
+        "stock": 8,
+        "created": "2026-10-14T09:40:00.000Z",
+        "image": "fotos_recolectadas/69_telescopios_de_suspensi_n__motos_.jpg"
+    },
+    {
+        "id": "ref_70",
+        "name": "Balero de rueda (Rodamiento)",
+        "category": "Suspensión/Dirección",
+        "cost": 220,
+        "price": 350,
+        "stock": 20,
+        "created": "2026-10-14T09:40:00.000Z",
+        "image": "fotos_recolectadas/70_balero_de_rueda__rodamiento_.jpg"
+    },
+    {
+        "id": "ref_71",
+        "name": "Batería",
+        "category": "Sistema Eléctrico",
+        "cost": 1100,
+        "price": 1650,
+        "stock": 8,
+        "created": "2026-10-14T09:40:00.000Z",
+        "image": "fotos_recolectadas/71_bater_a.jpg"
+    },
+    {
+        "id": "ref_72",
+        "name": "Alternador",
+        "category": "Sistema Eléctrico",
+        "cost": 1800,
+        "price": 2600,
+        "stock": 8,
+        "created": "2026-10-14T09:40:00.000Z",
+        "image": "fotos_recolectadas/72_alternador.png"
+    },
+    {
+        "id": "ref_73",
+        "name": "Estator (Motos)",
+        "category": "Sistema Eléctrico",
+        "cost": 450,
+        "price": 700,
+        "stock": 15,
+        "created": "2026-10-14T09:40:00.000Z",
+        "image": "fotos_recolectadas/73_estator__motos_.jpg"
+    },
+    {
+        "id": "ref_74",
+        "name": "Motor de arranque (Marcha)",
+        "category": "Sistema Eléctrico",
+        "cost": 1200,
+        "price": 1750,
+        "stock": 8,
+        "created": "2026-10-14T09:40:00.000Z",
+        "image": "fotos_recolectadas/74_motor_de_arranque__marcha_.jpg"
+    },
+    {
+        "id": "ref_75",
+        "name": "Bujía",
+        "category": "Sistema Eléctrico",
+        "cost": 40,
+        "price": 75,
+        "stock": 35,
+        "created": "2026-10-14T09:40:00.000Z",
+        "image": "fotos_recolectadas/75_buj_a.png"
+    },
+    {
+        "id": "ref_76",
+        "name": "Bobina de encendido",
+        "category": "Sistema Eléctrico",
+        "cost": 350,
+        "price": 550,
+        "stock": 15,
+        "created": "2026-10-14T09:40:00.000Z",
+        "image": "fotos_recolectadas/76_bobina_de_encendido.jpg"
+    },
+    {
+        "id": "ref_77",
+        "name": "Cables de bujía",
+        "category": "Sistema Eléctrico",
+        "cost": 220,
+        "price": 380,
+        "stock": 20,
+        "created": "2026-10-14T09:40:00.000Z",
+        "image": "fotos_recolectadas/77_cables_de_buj_a.jpg"
+    },
+    {
+        "id": "ref_78",
+        "name": "Módulo de control del motor (ECU)",
+        "category": "Sistema Eléctrico",
+        "cost": 3500,
+        "price": 5200,
+        "stock": 4,
+        "created": "2026-10-14T09:40:00.000Z",
+        "image": "fotos_recolectadas/78_m_dulo_de_control_del_motor__ecu_.png"
+    },
+    {
+        "id": "ref_79",
+        "name": "Caja de fusibles",
+        "category": "Sistema Eléctrico",
+        "cost": 450,
+        "price": 700,
+        "stock": 15,
+        "created": "2026-10-14T09:40:00.000Z",
+        "image": "fotos_recolectadas/79_caja_de_fusibles.jpg"
+    },
+    {
+        "id": "ref_80",
+        "name": "Relé (Relay)",
+        "category": "Sistema Eléctrico",
+        "cost": 60,
+        "price": 110,
+        "stock": 35,
+        "created": "2026-10-14T09:40:00.000Z",
+        "image": "fotos_recolectadas/80_rel___relay_.jpg"
+    },
+    {
+        "id": "ref_81",
+        "name": "Interruptor de encendido (Switch)",
+        "category": "Sistema Eléctrico",
+        "cost": 180,
+        "price": 290,
+        "stock": 20,
+        "created": "2026-10-14T09:40:00.000Z",
+        "image": "fotos_recolectadas/81_interruptor_de_encendido__switch_.jpg"
+    },
+    {
+        "id": "ref_82",
+        "name": "Faro delantero",
+        "category": "Sistema Eléctrico",
+        "cost": 850,
+        "price": 1300,
+        "stock": 15,
+        "created": "2026-10-14T09:40:00.000Z",
+        "image": "fotos_recolectadas/82_faro_delantero.jpg"
+    },
+    {
+        "id": "ref_83",
+        "name": "Calavera (Faro trasero)",
+        "category": "Sistema Eléctrico",
+        "cost": 450,
+        "price": 700,
+        "stock": 15,
+        "created": "2026-10-14T09:40:00.000Z",
+        "image": "fotos_recolectadas/83_calavera__faro_trasero_.jpg"
+    },
+    {
+        "id": "ref_84",
+        "name": "Foco direccional",
+        "category": "Sistema Eléctrico",
+        "cost": 15,
+        "price": 35,
+        "stock": 35,
+        "created": "2026-10-14T09:40:00.000Z",
+        "image": "fotos_recolectadas/84_foco_direccional.jpg"
+    },
+    {
+        "id": "ref_85",
+        "name": "Sensor de oxígeno (Sonda Lambda)",
+        "category": "Sistema Eléctrico",
+        "cost": 550,
+        "price": 850,
+        "stock": 15,
+        "created": "2026-10-14T09:40:00.000Z",
+        "image": "fotos_recolectadas/85_sensor_de_ox_geno__sonda_lambda_.gif"
+    },
+    {
+        "id": "ref_86",
+        "name": "Sensor MAF",
+        "category": "Sistema Eléctrico",
+        "cost": 650,
+        "price": 1000,
+        "stock": 15,
+        "created": "2026-10-14T09:40:00.000Z",
+        "image": "fotos_recolectadas/86_sensor_maf.jpg"
+    },
+    {
+        "id": "ref_87",
+        "name": "Claxon (Bocina)",
+        "category": "Sistema Eléctrico",
+        "cost": 150,
+        "price": 250,
+        "stock": 20,
+        "created": "2026-10-14T09:40:00.000Z",
+        "image": "fotos_recolectadas/87_claxon__bocina_.webp"
+    },
+    {
+        "id": "ref_88",
+        "name": "Fascia delantera (Defensa)",
+        "category": "Carrocería y Otros",
+        "cost": 1200,
+        "price": 1850,
+        "stock": 8,
+        "created": "2026-10-14T09:40:00.000Z",
+        "image": "fotos_recolectadas/88_fascia_delantera__defensa_.jpg"
+    },
+    {
+        "id": "ref_89",
+        "name": "Fascia trasera",
+        "category": "Carrocería y Otros",
+        "cost": 1100,
+        "price": 1700,
+        "stock": 8,
+        "created": "2026-10-14T09:40:00.000Z",
+        "image": "fotos_recolectadas/89_fascia_trasera.jpg"
+    },
+    {
+        "id": "ref_90",
+        "name": "Cofre (Capó)",
+        "category": "Carrocería y Otros",
+        "cost": 1800,
+        "price": 2800,
+        "stock": 8,
+        "created": "2026-10-14T09:40:00.000Z",
+        "image": "fotos_recolectadas/90_cofre__cap__.webp"
+    },
+    {
+        "id": "ref_91",
+        "name": "Puerta",
+        "category": "Carrocería y Otros",
+        "cost": 2500,
+        "price": 3800,
+        "stock": 8,
+        "created": "2026-10-14T09:40:00.000Z",
+        "image": "fotos_recolectadas/91_puerta.jpg"
+    },
+    {
+        "id": "ref_92",
+        "name": "Espejo retrovisor interior",
+        "category": "Carrocería y Otros",
+        "cost": 150,
+        "price": 280,
+        "stock": 20,
+        "created": "2026-10-14T09:40:00.000Z",
+        "image": "fotos_recolectadas/92_espejo_retrovisor_interior.png"
+    },
+    {
+        "id": "ref_93",
+        "name": "Espejo lateral",
+        "category": "Carrocería y Otros",
+        "cost": 450,
+        "price": 750,
+        "stock": 15,
+        "created": "2026-10-14T09:40:00.000Z",
+        "image": "fotos_recolectadas/93_espejo_lateral.jpg"
+    },
+    {
+        "id": "ref_94",
+        "name": "Parabrisas",
+        "category": "Carrocería y Otros",
+        "cost": 1500,
+        "price": 2400,
+        "stock": 8,
+        "created": "2026-10-14T09:40:00.000Z",
+        "image": "fotos_recolectadas/94_parabrisas.png"
+    },
+    {
+        "id": "ref_95",
+        "name": "Ventanilla lateral",
+        "category": "Carrocería y Otros",
+        "cost": 600,
+        "price": 950,
+        "stock": 15,
+        "created": "2026-10-14T09:40:00.000Z",
+        "image": "fotos_recolectadas/95_ventanilla_lateral.jpeg"
+    },
+    {
+        "id": "ref_96",
+        "name": "Asiento",
+        "category": "Carrocería y Otros",
+        "cost": 1800,
+        "price": 2800,
+        "stock": 8,
+        "created": "2026-10-14T09:40:00.000Z",
+        "image": "fotos_recolectadas/96_asiento.jpg"
+    },
+    {
+        "id": "ref_97",
+        "name": "Cinturón de seguridad",
+        "category": "Carrocería y Otros",
+        "cost": 350,
+        "price": 550,
+        "stock": 15,
+        "created": "2026-10-14T09:40:00.000Z",
+        "image": "fotos_recolectadas/97_cintur_n_de_seguridad.webp"
+    },
+    {
+        "id": "ref_98",
+        "name": "Tanque de combustible",
+        "category": "Carrocería y Otros",
+        "cost": 1600,
+        "price": 2500,
+        "stock": 8,
+        "created": "2026-10-14T09:40:00.000Z",
+        "image": "fotos_recolectadas/98_tanque_de_combustible.jpg"
+    },
+    {
+        "id": "ref_99",
+        "name": "Rin (Aro de rueda)",
+        "category": "Carrocería y Otros",
+        "cost": 800,
+        "price": 1250,
+        "stock": 15,
+        "created": "2026-10-14T09:40:00.000Z",
+        "image": "fotos_recolectadas/99_rin__aro_de_rueda_.jpeg"
+    },
+    {
+        "id": "ref_100",
+        "name": "Neumático (Llanta)",
+        "category": "Carrocería y Otros",
+        "cost": 1100,
+        "price": 1650,
+        "stock": 8,
+        "created": "2026-10-14T09:40:00.000Z",
+        "image": "fotos_recolectadas/100_neum_tico__llanta_.jpg"
     }
 ];
 let catalog = JSON.parse(JSON.stringify(REFACCIONES_CATALOG));
@@ -923,7 +1023,18 @@ async function initPosData(){
             await window.FirebaseService.products.seedIfEmpty(REFACCIONES_CATALOG);
             const cloudCatalog = await window.FirebaseService.products.getAll();
             if (cloudCatalog && cloudCatalog.length > 0) {
-                catalog = cloudCatalog;
+                let missingImagesCount = 0;
+                catalog = cloudCatalog.map(p => {
+                    const localRef = REFACCIONES_CATALOG.find(r => r.id === p.id);
+                    if (!p.image && localRef && localRef.image) {
+                        p.image = localRef.image;
+                        missingImagesCount++;
+                    }
+                    return p;
+                });
+                if (missingImagesCount > 0 && window.FirebaseService.products.syncImages) {
+                    window.FirebaseService.products.syncImages(REFACCIONES_CATALOG).catch(console.error);
+                }
             }
             // Suscripción reactiva a cambios en catálogo
             window.FirebaseService.products.subscribe((updated) => {
@@ -1112,8 +1223,15 @@ function renderCatalog(){
             ? `<button onclick="removeProduct('${p.id}')" class="text-slate-600 hover:text-rose-400 transition p-1 shrink-0" title="Eliminar producto (Solo Administrador)"><i data-lucide="trash-2" class="w-4 h-4"></i></button>`
             : '';
 
+        const imgTag = p.image 
+            ? `<div class="w-12 h-12 rounded-xl bg-slate-800 border border-slate-700/80 overflow-hidden shrink-0 flex items-center justify-center relative shadow-sm">
+                   <img src="${p.image}" alt="${escapeHtml(p.name)}" loading="lazy" class="w-full h-full object-cover" onerror="this.parentElement.innerHTML='<i data-lucide=&quot;package&quot; class=&quot;w-5 h-5 text-slate-500&quot;></i>';">
+               </div>`
+            : `<div class="w-12 h-12 rounded-xl bg-slate-800 border border-slate-700/80 overflow-hidden shrink-0 flex items-center justify-center text-slate-500"><i data-lucide="package" class="w-5 h-5"></i></div>`;
+
         return `
-        <div class="pos-row flex items-center gap-2">
+        <div class="pos-row flex items-center gap-3">
+            ${imgTag}
             <div class="flex-1 min-w-0">
                 <div class="flex items-center gap-2 mb-0.5 flex-wrap">
                     <span class="text-sm font-semibold text-white truncate">${p.name}</span>
@@ -1253,6 +1371,9 @@ function clearProductSelection(type, event) {
 
     if (type === 'sell') {
         onSellProductChange(true);
+    } else if (type === 'restock') {
+        const rPrev = document.getElementById('restock-product-preview');
+        if (rPrev) rPrev.classList.add('hidden');
     }
     filterProductDropdown(type);
     const list = document.getElementById(`${type}-dropdown-list`);
@@ -1286,6 +1407,18 @@ function selectDropdownProduct(type, pid) {
     } else if (type === 'restock') {
         if (searchInput) {
             searchInput.value = `${prod.name} (Stock: ${prod.stock || 0} u.)`;
+        }
+        const rPrev = document.getElementById('restock-product-preview');
+        const rImg = document.getElementById('restock-preview-img');
+        const rName = document.getElementById('restock-preview-name');
+        const rCat = document.getElementById('restock-preview-cat');
+        const rInfo = document.getElementById('restock-preview-info');
+        if (rPrev && rImg && rName) {
+            rImg.src = prod.image || '';
+            rName.textContent = prod.name;
+            if (rCat) rCat.textContent = prod.category || 'Refacción';
+            if (rInfo) rInfo.textContent = `Costo: ${fmt(prod.cost || 0)} · Precio: ${fmt(prod.price || 0)} · Stock actual: ${prod.stock || 0} u.`;
+            rPrev.classList.remove('hidden');
         }
     }
 
@@ -1358,17 +1491,26 @@ function filterProductDropdown(type) {
                     ? `<span class="pill bg-rose-500/20 text-rose-300 border border-rose-500/35 text-[9px] font-bold">⛔ AGOTADO</span>`
                     : `<span class="text-xs font-semibold text-emerald-400 font-mono">Stock: ${p.stock} u.</span>`;
 
+                const thumb = p.image 
+                    ? `<div class="w-10 h-10 rounded-lg bg-slate-800 border border-slate-700/80 overflow-hidden shrink-0 flex items-center justify-center">
+                           <img src="${p.image}" alt="${escapeHtml(p.name)}" loading="lazy" class="w-full h-full object-cover" onerror="this.parentElement.style.display='none';">
+                       </div>`
+                    : '';
+
                 return `
                     <div data-product-id="${p.id}"
                          onclick="selectDropdownProduct('sell', '${p.id}')" 
-                         class="p-2.5 hover:bg-sky-600/25 cursor-pointer transition flex items-center justify-between gap-2 text-left group border-b border-slate-800/60 last:border-b-0">
-                        <div class="flex-1 min-w-0">
-                            <div class="flex items-center gap-1.5 mb-0.5">
-                                ${catBadge}
-                                <span class="text-xs font-medium text-slate-200 group-hover:text-white truncate">${displayName}</span>
-                            </div>
-                            <div class="text-[11px] text-sky-400 font-semibold font-mono">
-                                ${fmt(p.price)}
+                         class="p-2.5 hover:bg-sky-600/25 cursor-pointer transition flex items-center justify-between gap-3 text-left group border-b border-slate-800/60 last:border-b-0">
+                        <div class="flex items-center gap-3 min-w-0 flex-1">
+                            ${thumb}
+                            <div class="flex-1 min-w-0">
+                                <div class="flex items-center gap-1.5 mb-0.5">
+                                    ${catBadge}
+                                    <span class="text-xs font-semibold text-slate-200 group-hover:text-white truncate">${displayName}</span>
+                                </div>
+                                <div class="text-[11px] text-sky-400 font-bold font-mono">
+                                    ${fmt(p.price)}
+                                </div>
                             </div>
                         </div>
                         <div class="text-right shrink-0">
@@ -1377,17 +1519,26 @@ function filterProductDropdown(type) {
                     </div>
                 `;
             } else {
+                const thumb = p.image 
+                    ? `<div class="w-10 h-10 rounded-lg bg-slate-800 border border-slate-700/80 overflow-hidden shrink-0 flex items-center justify-center">
+                           <img src="${p.image}" alt="${escapeHtml(p.name)}" loading="lazy" class="w-full h-full object-cover" onerror="this.parentElement.style.display='none';">
+                       </div>`
+                    : '';
+
                 return `
                     <div data-product-id="${p.id}"
                          onclick="selectDropdownProduct('restock', '${p.id}')" 
-                         class="p-2.5 hover:bg-indigo-600/25 cursor-pointer transition flex items-center justify-between gap-2 text-left group border-b border-slate-800/60 last:border-b-0">
-                        <div class="flex-1 min-w-0">
-                            <div class="flex items-center gap-1.5 mb-0.5">
-                                ${catBadge}
-                                <span class="text-xs font-medium text-slate-200 group-hover:text-white truncate">${displayName}</span>
-                            </div>
-                            <div class="text-[11px] text-slate-400 font-mono">
-                                Costo: ${fmt(p.cost || 0)} · Precio: ${fmt(p.price || 0)}
+                         class="p-2.5 hover:bg-indigo-600/25 cursor-pointer transition flex items-center justify-between gap-3 text-left group border-b border-slate-800/60 last:border-b-0">
+                        <div class="flex items-center gap-3 min-w-0 flex-1">
+                            ${thumb}
+                            <div class="flex-1 min-w-0">
+                                <div class="flex items-center gap-1.5 mb-0.5">
+                                    ${catBadge}
+                                    <span class="text-xs font-semibold text-slate-200 group-hover:text-white truncate">${displayName}</span>
+                                </div>
+                                <div class="text-[11px] text-slate-400 font-mono">
+                                    Costo: ${fmt(p.cost || 0)} · Precio: ${fmt(p.price || 0)}
+                                </div>
                             </div>
                         </div>
                         <div class="text-right shrink-0">
@@ -1458,7 +1609,9 @@ function onSellProductChange(fromProgrammatic = false){
     const qtyInput = document.getElementById('sell-qty');
     const qtyLabel = document.getElementById('sell-qty-label');
 
+    const sPrev = document.getElementById('sell-product-preview');
     if(!pid){
+        if(sPrev) sPrev.classList.add('hidden');
         if(searchInput && fromProgrammatic) searchInput.value = '';
         if(clearBtn && fromProgrammatic) clearBtn.classList.add('hidden');
         if(alertEl){ alertEl.classList.add('hidden'); alertEl.innerHTML = ''; }
@@ -1478,6 +1631,17 @@ function onSellProductChange(fromProgrammatic = false){
     if(searchInput && (!searchInput.value || fromProgrammatic === false)){
         searchInput.value = `${prod.name} (${fmt(prod.price)}) · Stock: ${prod.stock} u.`;
         if(clearBtn) clearBtn.classList.remove('hidden');
+    }
+    const sImg = document.getElementById('sell-preview-img');
+    const sName = document.getElementById('sell-preview-name');
+    const sCat = document.getElementById('sell-preview-cat');
+    const sPrice = document.getElementById('sell-preview-price');
+    if(sPrev && sImg && sName){
+        sImg.src = prod.image || '';
+        sName.textContent = prod.name;
+        if(sCat) sCat.textContent = prod.category || 'Refacción';
+        if(sPrice) sPrice.textContent = fmt(prod.price);
+        sPrev.classList.remove('hidden');
     }
 
     const stock = prod.stock || 0;
@@ -1697,7 +1861,7 @@ function addSaleItemWithQty(pid, qty){
     if(existing){
         existing.qty += qty;
     } else {
-        ticket.push({id:pid, name:prod.name, price:prod.price, cost:prod.cost, qty});
+        ticket.push({id:pid, name:prod.name, price:prod.price, cost:prod.cost, qty, image: prod.image || ''});
     }
 
     const sel = document.getElementById('sell-product');
@@ -2073,10 +2237,20 @@ function renderTicket(){
         return;
     }
     document.getElementById('ticket-items').innerHTML = ticket.map(t => {
-        return `
-        <div class="pos-row flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 p-2.5 rounded-xl bg-slate-900/90 border border-slate-800 hover:border-slate-700 transition mb-1.5 shadow-sm">
-            <div class="flex-1 min-w-0 w-full sm:w-auto">
-                <div class="text-xs text-white font-bold truncate" title="${t.name}">${t.name}</div>
+            const prod = catalog.find(p => p.id === t.id);
+            const tImg = t.image || (prod ? prod.image : '');
+            const tImgTag = tImg 
+                ? `<div class="w-9 h-9 rounded-lg bg-slate-800 border border-slate-700/80 overflow-hidden shrink-0 flex items-center justify-center">
+                       <img src="${tImg}" alt="${escapeHtml(t.name)}" class="w-full h-full object-cover">
+                   </div>`
+                : '';
+
+            return `
+        <div class="pos-row flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5 p-2.5 rounded-xl bg-slate-900/90 border border-slate-800 hover:border-slate-700 transition mb-1.5 shadow-sm">
+            <div class="flex items-center gap-2.5 flex-1 min-w-0 w-full sm:w-auto">
+                ${tImgTag}
+                <div class="flex-1 min-w-0">
+                    <div class="text-xs text-white font-bold truncate" title="${t.name}">${t.name}</div>
                 <div class="text-[11px] text-slate-400 flex items-center gap-2 mt-0.5">
                     <span class="mono text-emerald-400 font-medium">${fmt(t.price)} c/u</span>
                     <span class="text-slate-600">·</span>

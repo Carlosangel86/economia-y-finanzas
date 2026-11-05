@@ -240,6 +240,22 @@ export const UsersService = {
         }
     },
 
+        async syncImages(catalogWithImages) {
+        try {
+            const batch = writeBatch(db);
+            catalogWithImages.forEach(p => {
+                if (p.image) {
+                    const docRef = doc(db, 'products', p.id);
+                    batch.set(docRef, { image: p.image }, { merge: true });
+                }
+            });
+            await batch.commit();
+            console.log('[Firestore] Imágenes sincronizadas con éxito en la colección products.');
+        } catch (e) {
+            console.error('[Firestore syncImages Error]', e);
+        }
+    },
+
     subscribe(callback) {
         return onSnapshot(collection(db, 'users'), (snapshot) => {
             const list = [];

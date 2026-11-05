@@ -796,6 +796,17 @@
                      class="hidden absolute left-0 right-0 top-full mt-1.5 max-h-60 overflow-y-auto rounded-xl divide-y divide-slate-800/80">
                 </div>
                 <!-- Select oculto sincronizado para compatibilidad total -->
+                <!-- Previsualización Visual de la Refacción para Reabastecer -->
+                <div id="restock-product-preview" class="hidden mt-2 p-2.5 rounded-xl bg-slate-900/95 border border-indigo-500/30 flex items-center gap-3 shadow-md transition-all">
+                    <div class="w-12 h-12 rounded-lg bg-slate-800 border border-slate-700 overflow-hidden shrink-0 flex items-center justify-center">
+                        <img id="restock-preview-img" src="" alt="Refacción" class="w-full h-full object-cover">
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <span id="restock-preview-cat" class="pill bg-slate-800 text-indigo-300 border border-indigo-500/30 text-[8.5px] uppercase font-mono"></span>
+                        <div id="restock-preview-name" class="text-xs font-bold text-white truncate mt-0.5"></div>
+                        <div class="text-[11px] text-slate-400 font-mono" id="restock-preview-info"></div>
+                    </div>
+                </div>
                 <select id="restock-product" class="hidden">
                     <option value="">— Seleccionar producto para reabastecer —</option>
                 </select>
@@ -874,6 +885,17 @@
                          class="hidden absolute left-0 right-0 top-full mt-1.5 max-h-60 overflow-y-auto rounded-xl divide-y divide-slate-800/80">
                     </div>
                     <!-- Select oculto sincronizado para compatibilidad total -->
+                    <!-- Previsualización Visual de la Refacción Seleccionada -->
+                    <div id="sell-product-preview" class="hidden mt-2 p-2.5 rounded-xl bg-slate-900/95 border border-sky-500/30 flex items-center gap-3 shadow-md transition-all">
+                        <div class="w-12 h-12 rounded-lg bg-slate-800 border border-slate-700 overflow-hidden shrink-0 flex items-center justify-center">
+                            <img id="sell-preview-img" src="" alt="Refacción" class="w-full h-full object-cover">
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <span id="sell-preview-cat" class="pill bg-slate-800 text-sky-300 border border-slate-700 text-[8.5px] uppercase font-mono"></span>
+                            <div id="sell-preview-name" class="text-xs font-bold text-white truncate mt-0.5"></div>
+                            <div class="text-xs font-mono text-emerald-400 font-bold" id="sell-preview-price"></div>
+                        </div>
+                    </div>
                     <select id="sell-product" class="hidden" onchange="onSellProductChange()">
                         <option value="">— Seleccionar producto —</option>
                     </select>
