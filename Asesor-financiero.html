@@ -756,7 +756,7 @@
         </h4>
         <p class="text-[10px] text-slate-400 mb-2.5">Agrega más unidades a productos que ya tienes dados de alta en tu inventario.</p>
         <div class="space-y-2">
-                        <!-- Buscador Interactivo de Producto para Reabastecer -->
+                                    <!-- Buscador Interactivo de Producto para Reabastecer -->
             <div class="relative z-30" id="restock-combobox-wrap">
                 <div class="relative flex items-center">
                     <i data-lucide="search" class="w-4 h-4 text-indigo-400 absolute left-3 pointer-events-none"></i>
@@ -765,24 +765,28 @@
                            class="pos-input pl-9 pr-16 text-xs font-medium focus:border-indigo-500 bg-slate-900/95 text-white placeholder-slate-400 cursor-pointer" 
                            placeholder="Escribe para buscar o despliega la lista..." 
                            autocomplete="off"
-                           onclick="handleProductInputClick('restock')"
+                           onclick="handleProductInputClick('restock', event)"
                            onfocus="handleProductInputFocus('restock')"
                            oninput="filterProductDropdown('restock')"
                            onkeydown="handleProductInputKeydown('restock', event)">
                     <div class="absolute right-1.5 flex items-center gap-0.5">
                         <button type="button" 
                                 id="restock-clear-btn" 
-                                onclick="clearProductSelection('restock')" 
-                                class="hidden p-1 rounded-md text-slate-400 hover:text-white hover:bg-slate-700/60 transition"
+                                onclick="clearProductSelection('restock', event)" 
+                                class="hidden p-1.5 rounded-md text-slate-400 hover:text-white hover:bg-slate-700/60 transition cursor-pointer"
                                 title="Limpiar búsqueda">
-                            <i data-lucide="x" class="w-3.5 h-3.5"></i>
+                            <svg class="w-3.5 h-3.5 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                            </svg>
                         </button>
                         <button type="button" 
                                 id="restock-toggle-btn" 
-                                onclick="toggleProductDropdown('restock')" 
-                                class="p-1.5 rounded-md text-slate-400 hover:text-white hover:bg-slate-700/60 transition"
+                                onclick="toggleProductDropdown('restock', event)" 
+                                class="p-1.5 rounded-md text-slate-300 hover:text-white hover:bg-slate-700/60 transition cursor-pointer"
                                 title="Desplegar / Ocultar productos">
-                            <i data-lucide="chevron-down" id="restock-chevron-icon" class="w-4 h-4 transition-transform duration-200"></i>
+                            <svg id="restock-chevron-icon" class="w-4 h-4 pointer-events-none transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                            </svg>
                         </button>
                     </div>
                 </div>
@@ -830,7 +834,7 @@
                     <span>Producto / Servicio</span>
                     <span class="text-[9px] text-sky-400/80 font-normal">Búsqueda rápida (ignora acentos)</span>
                 </label>
-                                <!-- Buscador Interactivo de Producto para Venta -->
+                                                <!-- Buscador Interactivo de Producto para Venta -->
                 <div class="relative z-30" id="sell-combobox-wrap">
                     <div class="relative flex items-center">
                         <i data-lucide="search" class="w-4 h-4 text-sky-400 absolute left-3 pointer-events-none"></i>
@@ -839,24 +843,28 @@
                                class="pos-input pl-9 pr-16 text-xs font-medium focus:border-sky-500 bg-slate-900/95 text-white placeholder-slate-400 cursor-pointer" 
                                placeholder="Escribe para buscar o despliega la lista..." 
                                autocomplete="off"
-                               onclick="handleProductInputClick('sell')"
+                               onclick="handleProductInputClick('sell', event)"
                                onfocus="handleProductInputFocus('sell')"
                                oninput="filterProductDropdown('sell')"
                                onkeydown="handleProductInputKeydown('sell', event)">
                         <div class="absolute right-1.5 flex items-center gap-0.5">
                             <button type="button" 
                                     id="sell-clear-btn" 
-                                    onclick="clearProductSelection('sell')" 
-                                    class="hidden p-1 rounded-md text-slate-400 hover:text-white hover:bg-slate-700/60 transition"
+                                    onclick="clearProductSelection('sell', event)" 
+                                    class="hidden p-1.5 rounded-md text-slate-400 hover:text-white hover:bg-slate-700/60 transition cursor-pointer"
                                     title="Limpiar búsqueda">
-                                <i data-lucide="x" class="w-3.5 h-3.5"></i>
+                                <svg class="w-3.5 h-3.5 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                </svg>
                             </button>
                             <button type="button" 
                                     id="sell-toggle-btn" 
-                                    onclick="toggleProductDropdown('sell')" 
-                                    class="p-1.5 rounded-md text-slate-400 hover:text-white hover:bg-slate-700/60 transition"
+                                    onclick="toggleProductDropdown('sell', event)" 
+                                    class="p-1.5 rounded-md text-slate-300 hover:text-white hover:bg-slate-700/60 transition cursor-pointer"
                                     title="Desplegar / Ocultar productos">
-                                <i data-lucide="chevron-down" id="sell-chevron-icon" class="w-4 h-4 transition-transform duration-200"></i>
+                                <svg id="sell-chevron-icon" class="w-4 h-4 pointer-events-none transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                </svg>
                             </button>
                         </div>
                     </div>

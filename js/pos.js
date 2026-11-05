@@ -1170,7 +1170,11 @@ function highlightSearchMatch(text, query) {
     return `${escapeHtml(before)}<span class="bg-amber-400/30 text-amber-200 font-bold px-0.5 rounded">${escapeHtml(match)}</span>${escapeHtml(after)}`;
 }
 
-function toggleProductDropdown(type) {
+function toggleProductDropdown(type, event) {
+    if (event) {
+        event.stopPropagation();
+        event.preventDefault();
+    }
     const list = document.getElementById(`${type}-dropdown-list`);
     if (!list) return;
     const isHidden = list.classList.contains('hidden');
@@ -1183,20 +1187,17 @@ function toggleProductDropdown(type) {
     }
 }
 
-function handleProductInputClick(type) {
-    const searchInput = document.getElementById(`${type}-product-search`);
-    const list = document.getElementById(`${type}-dropdown-list`);
-    if (searchInput) searchInput.select();
-    if (!list || list.classList.contains('hidden')) {
-        openProductDropdown(type);
+function handleProductInputClick(type, event) {
+    if (event) {
+        event.stopPropagation();
     }
+    const searchInput = document.getElementById(`${type}-product-search`);
+    if (searchInput) searchInput.select();
+    openProductDropdown(type);
 }
 
 function handleProductInputFocus(type) {
-    const list = document.getElementById(`${type}-dropdown-list`);
-    if (!list || list.classList.contains('hidden')) {
-        openProductDropdown(type);
-    }
+    openProductDropdown(type);
 }
 
 function handleProductInputKeydown(type, e) {
@@ -1224,7 +1225,7 @@ function openProductDropdown(type) {
     list.classList.remove('hidden');
     if (chevron) chevron.style.transform = 'rotate(180deg)';
     if (window.lucide && typeof lucide.createIcons === 'function') {
-        lucide.createIcons();
+        lucide.createIcons({ root: list });
     }
 }
 
@@ -1235,7 +1236,10 @@ function closeProductDropdown(type) {
     if (chevron) chevron.style.transform = 'rotate(0deg)';
 }
 
-function clearProductSelection(type) {
+function clearProductSelection(type, event) {
+    if (event) {
+        event.stopPropagation();
+    }
     const searchInput = document.getElementById(`${type}-product-search`);
     const selectEl = document.getElementById(`${type}-product`);
     const clearBtn = document.getElementById(`${type}-clear-btn`);
@@ -1263,12 +1267,20 @@ function selectDropdownProduct(type, pid) {
     const searchInput = document.getElementById(`${type}-product-search`);
     const clearBtn = document.getElementById(`${type}-clear-btn`);
 
-    if (selectEl) selectEl.value = prod.id;
+    if (selectEl) {
+        if (!selectEl.querySelector(`option[value="${prod.id}"]`)) {
+            const opt = document.createElement('option');
+            opt.value = prod.id;
+            opt.textContent = prod.name;
+            selectEl.appendChild(opt);
+        }
+        selectEl.value = prod.id;
+    }
     if (clearBtn) clearBtn.classList.remove('hidden');
 
     if (type === 'sell') {
         if (searchInput) {
-            searchInput.value = `${prod.name} — ${fmt(prod.price)}`;
+            searchInput.value = `${prod.name} (${fmt(prod.price)}) · Stock: ${prod.stock} u.`;
         }
         onSellProductChange(false);
     } else if (type === 'restock') {
@@ -1293,7 +1305,6 @@ function filterProductDropdown(type) {
         clearBtn.classList.toggle('hidden', !rawVal);
     }
 
-    // Si el texto en el input es el formato exacto del producto ya seleccionado, permitimos ver todo al desplegar
     const selectEl = document.getElementById(`${type}-product`);
     const selectedProd = (catalog || []).find(p => p.id === (selectEl ? selectEl.value : ''));
     let effectiveQuery = query;
@@ -1309,7 +1320,7 @@ function filterProductDropdown(type) {
         return normName.includes(effectiveQuery) || normCat.includes(effectiveQuery);
     });
 
-    // Encabezado de estado de búsqueda dentro del desplegable
+    // Encabezado de estado dentro del menú desplegable
     let headerHtml = '';
     if (effectiveQuery) {
         headerHtml = `
@@ -1321,7 +1332,7 @@ function filterProductDropdown(type) {
     } else {
         headerHtml = `
             <div class="px-3 py-1.5 text-[10px] font-semibold text-slate-300 bg-slate-900 border-b border-slate-800 flex justify-between items-center sticky top-0 z-20">
-                <span><i data-lucide="list" class="w-3 h-3 inline mr-1 text-slate-400"></i>Catálogo (${catalog.length} refacciones)</span>
+                <span><i data-lucide="list" class="w-3 h-3 inline mr-1 text-slate-400"></i>Catálogo completo (${catalog.length} refacciones)</span>
                 <span class="text-[9px] text-slate-500">Haz clic para elegir</span>
             </div>
         `;
@@ -1333,7 +1344,7 @@ function filterProductDropdown(type) {
                 <i data-lucide="search-x" class="w-5 h-5 mx-auto mb-1.5 text-rose-400/80"></i>
                 <div class="font-medium text-slate-200 mb-0.5">Sin coincidencias</div>
                 <div class="text-[10px] text-slate-500">No encontramos productos con "<b>${escapeHtml(rawVal)}</b>".</div>
-                <button type="button" onclick="clearProductSelection('${type}')" class="mt-2.5 px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-[10.5px] text-sky-300 border border-slate-700 transition">Ver todo el catálogo</button>
+                <button type="button" onclick="clearProductSelection('${type}', event)" class="mt-2.5 px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-[10.5px] text-sky-300 border border-slate-700 transition">Ver todo el catálogo</button>
             </div>
         `;
     } else {
@@ -1392,19 +1403,18 @@ function filterProductDropdown(type) {
 
     listContainer.classList.remove('hidden');
     if (window.lucide && typeof lucide.createIcons === 'function') {
-        lucide.createIcons();
+        lucide.createIcons({ root: listContainer });
     }
 }
 
-// Cierre automático al hacer clic fuera del componente (Light Dismiss)
+// Cierre automático seguro al hacer clic fuera del componente (Light Dismiss)
 document.addEventListener('click', (e) => {
     const sellWrap = document.getElementById('sell-combobox-wrap');
-    const restockWrap = document.getElementById('restock-combobox-wrap');
-
-    if (sellWrap && !sellWrap.contains(e.target)) {
+    if (sellWrap && !sellWrap.contains(e.target) && !e.target.closest('#sell-combobox-wrap')) {
         closeProductDropdown('sell');
     }
-    if (restockWrap && !restockWrap.contains(e.target)) {
+    const restockWrap = document.getElementById('restock-combobox-wrap');
+    if (restockWrap && !restockWrap.contains(e.target) && !e.target.closest('#restock-combobox-wrap')) {
         closeProductDropdown('restock');
     }
 });
