@@ -29,14 +29,37 @@ jobs:
         with:
           node-version: 20
 
-      - name: Validate Service Account Secret
+      - name: Resolve Service Account Credential
+        id: resolve_sa
+        env:
+          SA_S1: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_ASESOR_FINANCIERO_83679 }}
+          SA_S2: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          SA_S3: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_CFO_COPILOT_FINANZAS }}
+          SA_S4: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_KEY }}
+          SA_S5: ${{ secrets.FIREBASE_CREDENTIALS }}
+          SA_V1: ${{ vars.FIREBASE_SERVICE_ACCOUNT_ASESOR_FINANCIERO_83679 }}
+          SA_V2: ${{ vars.FIREBASE_SERVICE_ACCOUNT }}
+          SA_V3: ${{ vars.FIREBASE_SERVICE_ACCOUNT_CFO_COPILOT_FINANZAS }}
         run: |
-          SECRET_VAL="${{ secrets.FIREBASE_SERVICE_ACCOUNT_ASESOR_FINANCIERO_83679 || secrets.FIREBASE_SERVICE_ACCOUNT || secrets.FIREBASE_SERVICE_ACCOUNT_KEY }}"
-          if [ -z "$SECRET_VAL" ]; then
-            echo "::error::El secreto de la cuenta de servicio de Firebase no fue encontrado en GitHub Secrets. Revisa que en Settings > Secrets and variables > Actions exista FIREBASE_SERVICE_ACCOUNT_ASESOR_FINANCIERO_83679 o FIREBASE_SERVICE_ACCOUNT."
+          SA_VAL="$SA_S1"
+          if [ -z "$SA_VAL" ]; then SA_VAL="$SA_S2"; fi
+          if [ -z "$SA_VAL" ]; then SA_VAL="$SA_S3"; fi
+          if [ -z "$SA_VAL" ]; then SA_VAL="$SA_S4"; fi
+          if [ -z "$SA_VAL" ]; then SA_VAL="$SA_S5"; fi
+          if [ -z "$SA_VAL" ]; then SA_VAL="$SA_V1"; fi
+          if [ -z "$SA_VAL" ]; then SA_VAL="$SA_V2"; fi
+          if [ -z "$SA_VAL" ]; then SA_VAL="$SA_V3"; fi
+
+          if [ -z "$SA_VAL" ]; then
+            echo "::error title=Secreto no encontrado::No se encontró el secreto de la cuenta de servicio de Firebase en este repositorio."
+            echo "Por favor dirígete a: https://github.com/Carlosangel86/asesor-financiero/settings/secrets/actions/new"
+            echo "Crea un secreto llamado FIREBASE_SERVICE_ACCOUNT_ASESOR_FINANCIERO_83679 y pega el JSON de la clave privada de Firebase."
             exit 1
           fi
-          echo "✓ Secreto de cuenta de servicio de Firebase detectado correctamente."
+
+          echo "✓ Secreto de Firebase detectado correctamente."
+          echo "$SA_VAL" > ./firebase_sa.json
+          echo "sa_ready=true" >> "$GITHUB_OUTPUT"
 
       - name: Deploy to Firebase Hosting via Action
         uses: FirebaseExtended/action-hosting-deploy@v0
@@ -44,18 +67,19 @@ jobs:
         continue-on-error: true
         with:
           repoToken: ${{ secrets.GITHUB_TOKEN }}
-          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_ASESOR_FINANCIERO_83679 || secrets.FIREBASE_SERVICE_ACCOUNT || secrets.FIREBASE_SERVICE_ACCOUNT_KEY }}
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_ASESOR_FINANCIERO_83679 || secrets.FIREBASE_SERVICE_ACCOUNT || secrets.FIREBASE_SERVICE_ACCOUNT_CFO_COPILOT_FINANZAS || secrets.FIREBASE_SERVICE_ACCOUNT_KEY || vars.FIREBASE_SERVICE_ACCOUNT_ASESOR_FINANCIERO_83679 || vars.FIREBASE_SERVICE_ACCOUNT || vars.FIREBASE_SERVICE_ACCOUNT_CFO_COPILOT_FINANZAS }}
           channelId: live
           projectId: asesor-financiero-83679
 
       - name: Fallback Direct Deploy with Firebase CLI
         if: steps.action_deploy.outcome == 'failure'
-        env:
-          FIREBASE_SA: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_ASESOR_FINANCIERO_83679 || secrets.FIREBASE_SERVICE_ACCOUNT || secrets.FIREBASE_SERVICE_ACCOUNT_KEY }}
         run: |
-          echo "Iniciando despliegue directo con Firebase CLI..."
-          echo "$FIREBASE_SA" > ./sa_key.json
-          export GOOGLE_APPLICATION_CREDENTIALS="$(pwd)/sa_key.json"
+          echo "Ejecutando despliegue directo con Firebase CLI..."
+          export GOOGLE_APPLICATION_CREDENTIALS="$(pwd)/firebase_sa.json"
           npx --yes firebase-tools deploy --only hosting --project asesor-financiero-83679 --non-interactive
-          rm -f ./sa_key.json
-          echo "✓ Despliegue con Firebase CLI completado exitosamente."
+          echo "✓ Despliegue con Firebase CLI finalizado con éxito."
+
+      - name: Cleanup Secrets
+        if: always()
+        run: |
+          rm -f ./firebase_sa.json
