@@ -29,57 +29,10 @@ jobs:
         with:
           node-version: 20
 
-      - name: Resolve Service Account Credential
-        id: resolve_sa
-        env:
-          SA_S1: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_ASESOR_FINANCIERO_83679 }}
-          SA_S2: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
-          SA_S3: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_CFO_COPILOT_FINANZAS }}
-          SA_S4: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_KEY }}
-          SA_S5: ${{ secrets.FIREBASE_CREDENTIALS }}
-          SA_V1: ${{ vars.FIREBASE_SERVICE_ACCOUNT_ASESOR_FINANCIERO_83679 }}
-          SA_V2: ${{ vars.FIREBASE_SERVICE_ACCOUNT }}
-          SA_V3: ${{ vars.FIREBASE_SERVICE_ACCOUNT_CFO_COPILOT_FINANZAS }}
-        run: |
-          SA_VAL="$SA_S1"
-          if [ -z "$SA_VAL" ]; then SA_VAL="$SA_S2"; fi
-          if [ -z "$SA_VAL" ]; then SA_VAL="$SA_S3"; fi
-          if [ -z "$SA_VAL" ]; then SA_VAL="$SA_S4"; fi
-          if [ -z "$SA_VAL" ]; then SA_VAL="$SA_S5"; fi
-          if [ -z "$SA_VAL" ]; then SA_VAL="$SA_V1"; fi
-          if [ -z "$SA_VAL" ]; then SA_VAL="$SA_V2"; fi
-          if [ -z "$SA_VAL" ]; then SA_VAL="$SA_V3"; fi
-
-          if [ -z "$SA_VAL" ]; then
-            echo "::error title=Secreto no encontrado::No se encontró el secreto de la cuenta de servicio de Firebase en este repositorio."
-            echo "Por favor dirígete a: https://github.com/Carlosangel86/asesor-financiero/settings/secrets/actions/new"
-            echo "Crea un secreto llamado FIREBASE_SERVICE_ACCOUNT_ASESOR_FINANCIERO_83679 y pega el JSON de la clave privada de Firebase."
-            exit 1
-          fi
-
-          echo "✓ Secreto de Firebase detectado correctamente."
-          echo "$SA_VAL" > ./firebase_sa.json
-          echo "sa_ready=true" >> "$GITHUB_OUTPUT"
-
-      - name: Deploy to Firebase Hosting via Action
-        uses: FirebaseExtended/action-hosting-deploy@v0
-        id: action_deploy
-        continue-on-error: true
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
         with:
-          repoToken: ${{ secrets.GITHUB_TOKEN }}
-          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_ASESOR_FINANCIERO_83679 || secrets.FIREBASE_SERVICE_ACCOUNT || secrets.FIREBASE_SERVICE_ACCOUNT_CFO_COPILOT_FINANZAS || secrets.FIREBASE_SERVICE_ACCOUNT_KEY || vars.FIREBASE_SERVICE_ACCOUNT_ASESOR_FINANCIERO_83679 || vars.FIREBASE_SERVICE_ACCOUNT || vars.FIREBASE_SERVICE_ACCOUNT_CFO_COPILOT_FINANZAS }}
-          channelId: live
-          projectId: asesor-financiero-83679
+          credentials_json: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_ASESOR_FINANCIERO_83679 || secrets.FIREBASE_SERVICE_ACCOUNT || secrets.FIREBASE_SERVICE_ACCOUNT_CFO_COPILOT_FINANZAS || secrets.FIREBASE_SERVICE_ACCOUNT_KEY || secrets.FIREBASE_CREDENTIALS || vars.FIREBASE_SERVICE_ACCOUNT_ASESOR_FINANCIERO_83679 || vars.FIREBASE_SERVICE_ACCOUNT || vars.FIREBASE_SERVICE_ACCOUNT_CFO_COPILOT_FINANZAS }}
 
-      - name: Fallback Direct Deploy with Firebase CLI
-        if: steps.action_deploy.outcome == 'failure'
-        run: |
-          echo "Ejecutando despliegue directo con Firebase CLI..."
-          export GOOGLE_APPLICATION_CREDENTIALS="$(pwd)/firebase_sa.json"
-          npx --yes firebase-tools deploy --only hosting --project asesor-financiero-83679 --non-interactive
-          echo "✓ Despliegue con Firebase CLI finalizado con éxito."
-
-      - name: Cleanup Secrets
-        if: always()
-        run: |
-          rm -f ./firebase_sa.json
+      - name: Deploy to Firebase Hosting
+        run: npx --yes firebase-tools deploy --only hosting --project asesor-financiero-83679 --non-interactive
