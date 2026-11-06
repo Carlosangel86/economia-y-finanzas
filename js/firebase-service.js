@@ -240,7 +240,20 @@ export const UsersService = {
         }
     },
 
-        async syncImages(catalogWithImages) {
+    subscribe(callback) {
+        return onSnapshot(collection(db, 'users'), (snapshot) => {
+            const list = [];
+            snapshot.forEach(docSnap => {
+                list.push({ id: docSnap.id, ...docSnap.data() });
+            });
+            callback(list);
+        });
+    }
+};
+
+// --- C. SERVICIO DE PRODUCTOS (Colección 'products') ---
+export const ProductsService = {
+    async syncImages(catalogWithImages) {
         try {
             const batch = writeBatch(db);
             catalogWithImages.forEach(p => {
@@ -256,19 +269,6 @@ export const UsersService = {
         }
     },
 
-    subscribe(callback) {
-        return onSnapshot(collection(db, 'users'), (snapshot) => {
-            const list = [];
-            snapshot.forEach(docSnap => {
-                list.push({ id: docSnap.id, ...docSnap.data() });
-            });
-            callback(list);
-        });
-    }
-};
-
-// --- C. SERVICIO DE PRODUCTOS (Colección 'products') ---
-export const ProductsService = {
     async getAll() {
         try {
             const snap = await getDocs(collection(db, 'products'));

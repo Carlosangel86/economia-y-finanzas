@@ -20,8 +20,6 @@
         <div class="flex items-center gap-2 cursor-pointer hover:opacity-90 transition" onclick="goTo('menu')" title="Ir al Menú Principal">
             <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
             <span class="font-bold text-white tracking-wide text-[13px]">CFO Copilot</span>
-            <span class="pill bg-slate-800 text-slate-400 border border-slate-700 text-[9px] font-mono">RBAC v2.5</span>
-            <span id="firebase-status-pill" class="pill bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 text-[9px] flex items-center gap-1 font-mono"><i data-lucide="flame" class="w-3 h-3 text-amber-400"></i>Firebase Cloud</span>
         </div>
         <div class="h-4 w-[1px] bg-slate-700/60 mx-1"></div>
         <div id="session-user-badge" class="flex items-center gap-1.5 sm:gap-2">
@@ -47,94 +45,6 @@
 
 <!-- ===== MODAL DE APERTURA DE TURNO ===== -->
 
-<!-- ===== MODAL DE CAMBIO RÁPIDO DE MODO / ROL ===== -->
-<div id="role-switch-modal" class="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4 hidden">
-    <div class="glass max-w-lg w-full rounded-2xl p-6 border border-amber-500/30 shadow-2xl relative text-left">
-        <button onclick="closeRoleSwitchModal()" class="absolute top-4 right-4 p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition" title="Cerrar">
-            <i data-lucide="x" class="w-4 h-4"></i>
-        </button>
-
-        <div class="flex items-center gap-3 mb-2">
-            <div class="w-10 h-10 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center shadow-lg shadow-amber-500/20">
-                <i data-lucide="users" class="w-5 h-5"></i>
-            </div>
-            <div>
-                <h3 class="text-base font-bold text-white">Cambiar Modo de Usuario (RBAC)</h3>
-                <p class="text-xs text-slate-400">Selecciona el rol con el que deseas interactuar y evaluar permisos:</p>
-            </div>
-        </div>
-
-        <div class="grid grid-cols-1 gap-2.5 mt-4">
-            <!-- 1. Admin -->
-            <button onclick="switchDemoUser('admin_demo')" type="button" class="w-full p-3 rounded-xl bg-purple-500/10 hover:bg-purple-500/20 border border-purple-500/30 text-left transition flex items-center justify-between group">
-                <div class="flex items-center gap-3">
-                    <span class="text-2xl">👑</span>
-                    <div>
-                        <div class="text-xs font-bold text-white group-hover:text-purple-300 transition">Administrador General <span class="font-mono text-[10px] text-purple-400">(@admin_demo)</span></div>
-                        <div class="text-[11px] text-slate-400">Control total: Punto de venta, finanzas, modelos IA (Qwen & Gemma), administración de usuarios y configuración.</div>
-                    </div>
-                </div>
-                <i data-lucide="chevron-right" class="w-4 h-4 text-purple-400 shrink-0"></i>
-            </button>
-
-            <!-- 2. Supervisor -->
-            <button onclick="switchDemoUser('supervisor_demo')" type="button" class="w-full p-3 rounded-xl bg-sky-500/10 hover:bg-sky-500/20 border border-sky-500/30 text-left transition flex items-center justify-between group">
-                <div class="flex items-center gap-3">
-                    <span class="text-2xl">🛡️</span>
-                    <div>
-                        <div class="text-xs font-bold text-white group-hover:text-sky-300 transition">Supervisor de Turno <span class="font-mono text-[10px] text-sky-400">(@supervisor_demo)</span></div>
-                        <div class="text-[11px] text-slate-400">Operación de caja, cortes X y Z, supervisión y aprobación justificada de cancelaciones.</div>
-                    </div>
-                </div>
-                <i data-lucide="chevron-right" class="w-4 h-4 text-sky-400 shrink-0"></i>
-            </button>
-
-            <!-- 3. Cajero -->
-            <button onclick="switchDemoUser('caja_demo')" type="button" class="w-full p-3 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 text-left transition flex items-center justify-between group">
-                <div class="flex items-center gap-3">
-                    <span class="text-2xl">🛒</span>
-                    <div>
-                        <div class="text-xs font-bold text-white group-hover:text-emerald-300 transition">Cajero Punto de Venta <span class="font-mono text-[10px] text-emerald-400">(@caja_demo)</span></div>
-                        <div class="text-[11px] text-slate-400">Cobro exclusivo: apertura de turno, métodos de pago (efectivo, tarjeta, transferencia, split) y tickets térmicos.</div>
-                    </div>
-                </div>
-                <i data-lucide="chevron-right" class="w-4 h-4 text-emerald-400 shrink-0"></i>
-            </button>
-
-            <!-- 4. Analista -->
-            <button onclick="switchDemoUser('finanzas_demo')" type="button" class="w-full p-3 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-left transition flex items-center justify-between group">
-                <div class="flex items-center gap-3">
-                    <span class="text-2xl">📈</span>
-                    <div>
-                        <div class="text-xs font-bold text-white group-hover:text-amber-300 transition">Analista Financiero <span class="font-mono text-[10px] text-amber-400">(@finanzas_demo)</span></div>
-                        <div class="text-[11px] text-slate-400">Consultas con IA Qwen/Gemma, correlación Pearson, proyecciones avanzadas (VAN, TIR) y estadísticas de venta.</div>
-                    </div>
-                </div>
-                <i data-lucide="chevron-right" class="w-4 h-4 text-amber-400 shrink-0"></i>
-            </button>
-
-            <!-- 5. Almacén -->
-            <button onclick="switchDemoUser('almacen_demo')" type="button" class="w-full p-3 rounded-xl bg-teal-500/10 hover:bg-teal-500/20 border border-teal-500/30 text-left transition flex items-center justify-between group">
-                <div class="flex items-center gap-3">
-                    <span class="text-2xl">📦</span>
-                    <div>
-                        <div class="text-xs font-bold text-white group-hover:text-teal-300 transition">Encargado de Almacén <span class="font-mono text-[10px] text-teal-400">(@almacen_demo)</span></div>
-                        <div class="text-[11px] text-slate-400">Catálogo de 100 refacciones automotrices, puntos de reorden (ROP), registro y recepción de stock (eliminación de productos restringida a Administrador).</div>
-                    </div>
-                </div>
-                <i data-lucide="chevron-right" class="w-4 h-4 text-teal-400 shrink-0"></i>
-            </button>
-        </div>
-
-        <div class="mt-4 pt-3 border-t border-slate-800 text-center">
-            <button onclick="closeRoleSwitchModal()" type="button" class="pos-btn bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs px-5 py-2">
-                Cerrar Panel
-            </button>
-        </div>
-    </div>
-</div>
-
-
 <!-- ===== MODAL: ¿CUÁNTAS PIEZAS REQUIEREN? (SELECCIÓN AL VENDER) ===== -->
 <div id="sell-qty-modal" class="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-sm flex items-center justify-center p-4 hidden">
     <div class="glass max-w-md w-full rounded-2xl p-6 border border-sky-500/30 shadow-2xl relative text-left fin">
@@ -152,18 +62,23 @@
             </div>
         </div>
 
-        <div class="p-3 rounded-xl bg-slate-900/80 border border-slate-800 mb-4 space-y-1 text-xs">
-            <div class="flex justify-between items-center">
-                <span class="text-slate-400 font-medium">Producto:</span>
-                <b id="sqm-product-name" class="text-white text-right truncate max-w-[240px]">—</b>
+        <div class="p-3 rounded-xl bg-slate-900/80 border border-slate-800 mb-4 flex items-center gap-3 text-xs">
+            <div id="sqm-product-img-wrap" class="w-14 h-14 rounded-xl bg-slate-800 border border-slate-700 overflow-hidden shrink-0 flex items-center justify-center shadow-sm">
+                <img id="sqm-product-img" src="" alt="Refacción" class="w-full h-full object-cover">
             </div>
-            <div class="flex justify-between items-center">
-                <span class="text-slate-400 font-medium">Precio unitario:</span>
-                <span id="sqm-product-price" class="text-emerald-400 font-mono font-bold">$0</span>
-            </div>
-            <div class="flex justify-between items-center">
-                <span class="text-slate-400 font-medium">Inventario disponible:</span>
-                <span id="sqm-product-stock" class="text-slate-200 font-mono font-semibold">0 u.</span>
+            <div class="flex-1 min-w-0 space-y-1">
+                <div class="flex justify-between items-center gap-2">
+                    <span class="text-slate-400 font-medium">Producto:</span>
+                    <b id="sqm-product-name" class="text-white text-right truncate max-w-[200px]">—</b>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="text-slate-400 font-medium">Precio unitario:</span>
+                    <span id="sqm-product-price" class="text-emerald-400 font-mono font-bold">$0</span>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="text-slate-400 font-medium">Inventario disponible:</span>
+                    <span id="sqm-product-stock" class="text-slate-200 font-mono font-semibold">0 u.</span>
+                </div>
             </div>
         </div>
 
@@ -226,18 +141,23 @@
             </div>
         </div>
 
-        <div class="p-3 rounded-xl bg-slate-900/80 border border-slate-800 mb-3 space-y-1 text-xs">
-            <div class="flex justify-between items-center">
-                <span class="text-slate-400 font-medium">Producto en ticket:</span>
-                <b id="tmq-product-name" class="text-white text-right truncate max-w-[240px]">—</b>
+        <div class="p-3 rounded-xl bg-slate-900/80 border border-slate-800 mb-3 flex items-center gap-3 text-xs">
+            <div id="tmq-product-img-wrap" class="w-14 h-14 rounded-xl bg-slate-800 border border-slate-700 overflow-hidden shrink-0 flex items-center justify-center shadow-sm">
+                <img id="tmq-product-img" src="" alt="Refacción" class="w-full h-full object-cover">
             </div>
-            <div class="flex justify-between items-center">
-                <span class="text-slate-400 font-medium">Precio unitario:</span>
-                <span id="tmq-product-price" class="text-emerald-400 font-mono font-bold">$0</span>
-            </div>
-            <div class="flex justify-between items-center">
-                <span class="text-slate-400 font-medium">Stock en almacén:</span>
-                <span id="tmq-product-stock" class="text-slate-200 font-mono font-semibold">0 u.</span>
+            <div class="flex-1 min-w-0 space-y-1">
+                <div class="flex justify-between items-center gap-2">
+                    <span class="text-slate-400 font-medium">Producto en ticket:</span>
+                    <b id="tmq-product-name" class="text-white text-right truncate max-w-[200px]">—</b>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="text-slate-400 font-medium">Precio unitario:</span>
+                    <span id="tmq-product-price" class="text-emerald-400 font-mono font-bold">$0</span>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="text-slate-400 font-medium">Stock en almacén:</span>
+                    <span id="tmq-product-stock" class="text-slate-200 font-mono font-semibold">0 u.</span>
+                </div>
             </div>
         </div>
 
@@ -526,28 +446,6 @@
     <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-sky-400 via-blue-500 to-indigo-600 flex items-center justify-center mx-auto mb-5 shadow-xl shadow-sky-600/25"><i data-lucide="brain-circuit" class="text-white w-8 h-8"></i></div>
     <h1 class="text-3xl font-bold text-white mb-2">CFO Copilot <span class="pill bg-sky-900/60 text-sky-400 border border-sky-800/50 ml-2">Pro v2</span></h1>
     <p class="text-slate-400 text-sm">Plataforma de Inteligencia Financiera para Pequeños Empresarios</p>
-    
-    <!-- Barra Rápida de Cambio de Modo / Rol en Menú Principal -->
-    <div class="mt-4 flex flex-wrap items-center justify-center gap-1.5 p-1.5 bg-slate-900/80 border border-slate-800/90 rounded-2xl shadow-xl max-w-2xl mx-auto">
-        <span class="text-[10px] font-bold uppercase tracking-wider text-amber-400 px-2 flex items-center gap-1">
-            <i data-lucide="users" class="w-3.5 h-3.5"></i>Modo de Usuario:
-        </span>
-        <button onclick="switchDemoUser('admin_demo')" type="button" class="px-2.5 py-1 rounded-xl text-[11px] font-semibold transition flex items-center gap-1 border border-purple-500/30 bg-purple-500/10 hover:bg-purple-500/20 text-purple-300" title="Control Total">
-            👑 Admin
-        </button>
-        <button onclick="switchDemoUser('supervisor_demo')" type="button" class="px-2.5 py-1 rounded-xl text-[11px] font-semibold transition flex items-center gap-1 border border-sky-500/30 bg-sky-500/10 hover:bg-sky-500/20 text-sky-300" title="Supervisión y Cortes X/Z">
-            🛡️ Supervisor
-        </button>
-        <button onclick="switchDemoUser('caja_demo')" type="button" class="px-2.5 py-1 rounded-xl text-[11px] font-semibold transition flex items-center gap-1 border border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300" title="Ventas Exclusivas">
-            🛒 Cajero
-        </button>
-        <button onclick="switchDemoUser('finanzas_demo')" type="button" class="px-2.5 py-1 rounded-xl text-[11px] font-semibold transition flex items-center gap-1 border border-amber-500/30 bg-amber-500/10 hover:bg-amber-500/20 text-amber-300" title="Finanzas & Modelos IA">
-            📈 Analista
-        </button>
-        <button onclick="switchDemoUser('almacen_demo')" type="button" class="px-2.5 py-1 rounded-xl text-[11px] font-semibold transition flex items-center gap-1 border border-teal-500/30 bg-teal-500/10 hover:bg-teal-500/20 text-teal-300" title="Catálogo & Existencias">
-            📦 Almacén
-        </button>
-    </div>
 </div>
 <div class="flex gap-6 z-10">
     <div id="menu-card-advisor" class="menu-card w-72 fin transition-all" onclick="goTo('advisor')" style="animation-delay:.1s">
@@ -749,7 +647,7 @@
     </div>
 
     <!-- Reabastecer Inventario Existente -->
-    <div id="sec-restock-product" class="glass rounded-xl p-4 border border-indigo-500/25 bg-gradient-to-br from-indigo-500/8 via-slate-900/40 to-slate-900/60">
+    <div id="sec-restock-product" class="glass rounded-xl p-4 border border-indigo-500/25 bg-gradient-to-br from-indigo-500/8 via-slate-900/40 to-slate-900/60 relative z-20">
         <h4 class="text-xs font-bold text-indigo-300 uppercase tracking-wider mb-2.5 flex items-center justify-between">
             <span class="flex items-center gap-1.5"><i data-lucide="boxes" class="w-3.5 h-3.5 text-indigo-400"></i>Reabastecer / Agregar Stock</span>
             <span class="pill bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 text-[9px]">Entrada</span>

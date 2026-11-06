@@ -118,11 +118,16 @@ function renderAlmacenDashboard(){
         critContainer.innerHTML = criticalList.map(p => {
             const isZero = (p.stock || 0) <= 0;
             const ropThreshold = p.rop || 5;
+            const imgSrc = typeof resolveProductImage === 'function' ? resolveProductImage(p) : (p.image || '');
+            const imgTag = imgSrc
+                ? `<div class="w-10 h-10 rounded-lg bg-slate-800 border border-slate-700/80 overflow-hidden shrink-0 flex items-center justify-center"><img src="${imgSrc}" alt="${p.name}" loading="lazy" class="w-full h-full object-cover"></div>`
+                : `<div class="w-10 h-10 rounded-lg bg-slate-800 border border-slate-700/80 overflow-hidden shrink-0 flex items-center justify-center text-slate-500"><i data-lucide="package" class="w-4 h-4"></i></div>`;
             const badge = isZero
                 ? `<span class="pill bg-rose-500/20 text-rose-300 border border-rose-500/35 font-bold text-[9px] flex items-center gap-1"><i data-lucide="alert-octagon" class="w-2.5 h-2.5 text-rose-400"></i>AGOTADO (0 u.)</span>`
                 : `<span class="pill bg-amber-500/20 text-amber-300 border border-amber-500/35 font-bold text-[9px] flex items-center gap-1"><i data-lucide="alert-triangle" class="w-2.5 h-2.5 text-amber-400"></i>ROP Crítico (${p.stock} <= ${ropThreshold} u.)</span>`;
             return `
-            <div class="pos-row flex items-center justify-between p-2.5 bg-slate-900/50 border border-slate-800 rounded-xl">
+            <div class="pos-row flex items-center justify-between gap-3 p-2.5 bg-slate-900/50 border border-slate-800 rounded-xl">
+                ${imgTag}
                 <div class="flex-1 min-w-0">
                     <div class="flex items-center gap-2 mb-0.5 flex-wrap">
                         <span class="text-xs font-semibold text-white truncate">${p.name}</span>

@@ -1010,6 +1010,30 @@ let expenses = [];
 let ticket = [];
 let posChart;
 
+function resolveProductImage(p) {
+    if (!p) return '';
+    if (p.image && typeof p.image === 'string' && p.image.trim() !== '') {
+        return p.image.trim();
+    }
+    const localRef = REFACCIONES_CATALOG.find(r =>
+        r.id === p.id || normalizeSearchText(r.name) === normalizeSearchText(p.name)
+    );
+    return (localRef && localRef.image) ? localRef.image : '';
+}
+
+function enrichCatalogImages(list) {
+    let missingCount = 0;
+    const enriched = (list || []).map(p => {
+        const resolved = resolveProductImage(p);
+        if (!p.image && resolved) {
+            p.image = resolved;
+            missingCount++;
+        }
+        return p;
+    });
+    return { enriched, missingCount };
+}
+
 async function initPosData(){
     if (!window.FirebaseService) {
         await new Promise(r => {
@@ -1023,23 +1047,17 @@ async function initPosData(){
             await window.FirebaseService.products.seedIfEmpty(REFACCIONES_CATALOG);
             const cloudCatalog = await window.FirebaseService.products.getAll();
             if (cloudCatalog && cloudCatalog.length > 0) {
-                let missingImagesCount = 0;
-                catalog = cloudCatalog.map(p => {
-                    const localRef = REFACCIONES_CATALOG.find(r => r.id === p.id);
-                    if (!p.image && localRef && localRef.image) {
-                        p.image = localRef.image;
-                        missingImagesCount++;
-                    }
-                    return p;
-                });
-                if (missingImagesCount > 0 && window.FirebaseService.products.syncImages) {
+                const { enriched, missingCount } = enrichCatalogImages(cloudCatalog);
+                catalog = enriched;
+                if (missingCount > 0 && window.FirebaseService.products.syncImages) {
                     window.FirebaseService.products.syncImages(REFACCIONES_CATALOG).catch(console.error);
                 }
             }
-            // Suscripción reactiva a cambios en catálogo
+            // Suscripción reactiva a cambios en catálogo (preservando imágenes)
             window.FirebaseService.products.subscribe((updated) => {
                 if (updated && updated.length > 0) {
-                    catalog = updated;
+                    const { enriched } = enrichCatalogImages(updated);
+                    catalog = enriched;
                     renderCatalog();
                     updateProductSelect();
                     if (typeof renderAlmacenDashboard === 'function') renderAlmacenDashboard();
@@ -1083,6 +1101,9 @@ async function reloadRefaccionesCatalog(){
         catalog = JSON.parse(JSON.stringify(REFACCIONES_CATALOG));
         if (window.FirebaseService && window.FirebaseService.products) {
             await window.FirebaseService.products.seedIfEmpty(REFACCIONES_CATALOG);
+            if (window.FirebaseService.products.syncImages) {
+                await window.FirebaseService.products.syncImages(REFACCIONES_CATALOG);
+            }
         }
         renderCatalog();
         updateProductSelect();
@@ -1223,9 +1244,10 @@ function renderCatalog(){
             ? `<button onclick="removeProduct('${p.id}')" class="text-slate-600 hover:text-rose-400 transition p-1 shrink-0" title="Eliminar producto (Solo Administrador)"><i data-lucide="trash-2" class="w-4 h-4"></i></button>`
             : '';
 
-        const imgTag = p.image 
-            ? `<div class="w-12 h-12 rounded-xl bg-slate-800 border border-slate-700/80 overflow-hidden shrink-0 flex items-center justify-center relative shadow-sm">
-                   <img src="${p.image}" alt="${escapeHtml(p.name)}" loading="lazy" class="w-full h-full object-cover" onerror="this.parentElement.innerHTML='<i data-lucide=&quot;package&quot; class=&quot;w-5 h-5 text-slate-500&quot;></i>';">
+        const imgSrc = resolveProductImage(p);
+        const imgTag = imgSrc 
+            ? `<div class="w-12 h-12 rounded-xl bg-slate-800 border border-slate-700/80 overflow-hidden shrink-0 flex items-center justify-center shadow-sm">
+                   <img src="${imgSrc}" alt="${escapeHtml(p.name)}" loading="lazy" class="w-full h-full object-cover" onerror="this.parentElement.innerHTML='<i data-lucide=&quot;package&quot; class=&quot;w-5 h-5 text-slate-500&quot;></i>';">
                </div>`
             : `<div class="w-12 h-12 rounded-xl bg-slate-800 border border-slate-700/80 overflow-hidden shrink-0 flex items-center justify-center text-slate-500"><i data-lucide="package" class="w-5 h-5"></i></div>`;
 
@@ -1337,7 +1359,12 @@ function handleProductInputKeydown(type, e) {
 function openProductDropdown(type) {
     const list = document.getElementById(`${type}-dropdown-list`);
     const chevron = document.getElementById(`${type}-chevron-icon`);
+    const wrap = document.getElementById(`${type}-combobox-wrap`);
+    const sec = type === 'restock' ? document.getElementById('sec-restock-product') : null;
     if (!list) return;
+
+    if (wrap) wrap.style.zIndex = '50';
+    if (sec) sec.style.zIndex = '50';
 
     filterProductDropdown(type);
     list.classList.remove('hidden');
@@ -1350,8 +1377,12 @@ function openProductDropdown(type) {
 function closeProductDropdown(type) {
     const list = document.getElementById(`${type}-dropdown-list`);
     const chevron = document.getElementById(`${type}-chevron-icon`);
+    const wrap = document.getElementById(`${type}-combobox-wrap`);
+    const sec = type === 'restock' ? document.getElementById('sec-restock-product') : null;
     if (list) list.classList.add('hidden');
     if (chevron) chevron.style.transform = 'rotate(0deg)';
+    if (wrap) wrap.style.zIndex = '';
+    if (sec) sec.style.zIndex = '';
 }
 
 function clearProductSelection(type, event) {
@@ -1414,7 +1445,14 @@ function selectDropdownProduct(type, pid) {
         const rCat = document.getElementById('restock-preview-cat');
         const rInfo = document.getElementById('restock-preview-info');
         if (rPrev && rImg && rName) {
-            rImg.src = prod.image || '';
+            const imgSrc = resolveProductImage(prod);
+            if (imgSrc) {
+                rImg.src = imgSrc;
+                rImg.parentElement.classList.remove('hidden');
+            } else {
+                rImg.removeAttribute('src');
+                rImg.parentElement.classList.add('hidden');
+            }
             rName.textContent = prod.name;
             if (rCat) rCat.textContent = prod.category || 'Refacción';
             if (rInfo) rInfo.textContent = `Costo: ${fmt(prod.cost || 0)} · Precio: ${fmt(prod.price || 0)} · Stock actual: ${prod.stock || 0} u.`;
@@ -1486,14 +1524,15 @@ function filterProductDropdown(type) {
             const catBadge = p.category ? `<span class="pill bg-slate-800 text-slate-300 border border-slate-700 text-[8.5px] uppercase font-mono">${escapeHtml(p.category)}</span>` : '';
             const displayName = highlightSearchMatch(p.name, effectiveQuery);
 
+            const imgSrc = resolveProductImage(p);
             if (type === 'sell') {
                 const stockBadge = isOut 
                     ? `<span class="pill bg-rose-500/20 text-rose-300 border border-rose-500/35 text-[9px] font-bold">⛔ AGOTADO</span>`
                     : `<span class="text-xs font-semibold text-emerald-400 font-mono">Stock: ${p.stock} u.</span>`;
 
-                const thumb = p.image 
+                const thumb = imgSrc 
                     ? `<div class="w-10 h-10 rounded-lg bg-slate-800 border border-slate-700/80 overflow-hidden shrink-0 flex items-center justify-center">
-                           <img src="${p.image}" alt="${escapeHtml(p.name)}" loading="lazy" class="w-full h-full object-cover" onerror="this.parentElement.style.display='none';">
+                           <img src="${imgSrc}" alt="${escapeHtml(p.name)}" loading="lazy" class="w-full h-full object-cover" onerror="this.parentElement.style.display='none';">
                        </div>`
                     : '';
 
@@ -1519,9 +1558,9 @@ function filterProductDropdown(type) {
                     </div>
                 `;
             } else {
-                const thumb = p.image 
+                const thumb = imgSrc 
                     ? `<div class="w-10 h-10 rounded-lg bg-slate-800 border border-slate-700/80 overflow-hidden shrink-0 flex items-center justify-center">
-                           <img src="${p.image}" alt="${escapeHtml(p.name)}" loading="lazy" class="w-full h-full object-cover" onerror="this.parentElement.style.display='none';">
+                           <img src="${imgSrc}" alt="${escapeHtml(p.name)}" loading="lazy" class="w-full h-full object-cover" onerror="this.parentElement.style.display='none';">
                        </div>`
                     : '';
 
@@ -1637,7 +1676,14 @@ function onSellProductChange(fromProgrammatic = false){
     const sCat = document.getElementById('sell-preview-cat');
     const sPrice = document.getElementById('sell-preview-price');
     if(sPrev && sImg && sName){
-        sImg.src = prod.image || '';
+        const imgSrc = resolveProductImage(prod);
+        if (imgSrc) {
+            sImg.src = imgSrc;
+            sImg.parentElement.classList.remove('hidden');
+        } else {
+            sImg.removeAttribute('src');
+            sImg.parentElement.classList.add('hidden');
+        }
         sName.textContent = prod.name;
         if(sCat) sCat.textContent = prod.category || 'Refacción';
         if(sPrice) sPrice.textContent = fmt(prod.price);
@@ -1731,6 +1777,18 @@ function openSellQtyModal(pid){
     document.getElementById('sqm-product-name').textContent = prod.name;
     document.getElementById('sqm-product-price').textContent = fmt(prod.price);
     document.getElementById('sqm-product-stock').textContent = `${remaining} u. disponibles`;
+    const sqmImg = document.getElementById('sqm-product-img');
+    const sqmImgWrap = document.getElementById('sqm-product-img-wrap');
+    if (sqmImg && sqmImgWrap) {
+        const imgSrc = resolveProductImage(prod);
+        if (imgSrc) {
+            sqmImg.src = imgSrc;
+            sqmImgWrap.classList.remove('hidden');
+        } else {
+            sqmImg.removeAttribute('src');
+            sqmImgWrap.classList.add('hidden');
+        }
+    }
     
     const input = document.getElementById('sqm-qty-input');
     input.value = 1;
@@ -1860,8 +1918,9 @@ function addSaleItemWithQty(pid, qty){
 
     if(existing){
         existing.qty += qty;
+        if(!existing.image) existing.image = resolveProductImage(prod);
     } else {
-        ticket.push({id:pid, name:prod.name, price:prod.price, cost:prod.cost, qty, image: prod.image || ''});
+        ticket.push({id:pid, name:prod.name, price:prod.price, cost:prod.cost, qty, image: resolveProductImage(prod)});
     }
 
     const sel = document.getElementById('sell-product');
@@ -1912,6 +1971,18 @@ function openModifyTicketQtyModal(id){
     document.getElementById('tmq-product-name').textContent = item.name;
     document.getElementById('tmq-product-price').textContent = fmt(item.price);
     document.getElementById('tmq-product-stock').textContent = `${maxStock} u. en almacén`;
+    const tmqImg = document.getElementById('tmq-product-img');
+    const tmqImgWrap = document.getElementById('tmq-product-img-wrap');
+    if (tmqImg && tmqImgWrap) {
+        const imgSrc = resolveProductImage(prod || item);
+        if (imgSrc) {
+            tmqImg.src = imgSrc;
+            tmqImgWrap.classList.remove('hidden');
+        } else {
+            tmqImg.removeAttribute('src');
+            tmqImgWrap.classList.add('hidden');
+        }
+    }
     
     const input = document.getElementById('tmq-qty-input');
     input.value = item.qty;
@@ -2238,7 +2309,7 @@ function renderTicket(){
     }
     document.getElementById('ticket-items').innerHTML = ticket.map(t => {
             const prod = catalog.find(p => p.id === t.id);
-            const tImg = t.image || (prod ? prod.image : '');
+            const tImg = t.image || resolveProductImage(prod || t);
             const tImgTag = tImg 
                 ? `<div class="w-9 h-9 rounded-lg bg-slate-800 border border-slate-700/80 overflow-hidden shrink-0 flex items-center justify-center">
                        <img src="${tImg}" alt="${escapeHtml(t.name)}" class="w-full h-full object-cover">
