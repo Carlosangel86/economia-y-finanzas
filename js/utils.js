@@ -4,9 +4,6 @@
 let currentTaxZoneRate = parseFloat(localStorage.getItem('pos_tax_rate')) || 0.16;
 let currentAppTimeZone = localStorage.getItem('pos_app_tz') || 'America/Mexico_City';
 
-// ===== CONTROL DE TURNOS Y ARQUEOS DE CAJA =====
-let currentShift = JSON.parse(localStorage.getItem('pos_current_shift')) || null;
-let shiftsHistory = JSON.parse(localStorage.getItem('pos_shifts_history')) || [];
 
 function onTaxZoneChange(val){
     currentTaxZoneRate = parseFloat(val) / 100;
