@@ -595,16 +595,9 @@
 
 <!-- POS: Panel Izquierdo - Catálogo -->
 <div class="w-[38%] flex flex-col border-r border-slate-800/80 bg-slate-900 relative" style="min-width:340px">
-<div class="px-5 py-3.5 border-b border-slate-800/60 flex items-center justify-between bg-slate-900/95 backdrop-blur-xl">
-    <div class="flex items-center gap-3">
-        <button onclick="goTo('menu')" class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 text-xs font-semibold transition shadow-sm" title="Salir al Menú Principal"><i data-lucide="arrow-left" class="w-4 h-4"></i><span>Salir al Menú</span></button>
-        <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-lg shadow-emerald-600/20"><i data-lucide="shopping-cart" class="text-white w-5 h-5"></i></div>
-        <div><h2 class="text-sm font-bold text-white">Punto de Venta</h2><p class="text-[10px] text-slate-500 mono">Catálogo & Ventas Diarias</p></div>
-    </div>
-    <div class="flex items-center gap-2">
-        <button id="btn-pos-goto-advisor" onclick="goTo('advisor')" class="pos-btn bg-gradient-to-r from-sky-600 to-indigo-600 hover:from-sky-500 hover:to-indigo-500 text-white text-[11px] font-semibold shadow-lg shadow-sky-600/20 px-3 py-1.5"><i data-lucide="brain-circuit" class="w-3.5 h-3.5"></i>Asesor Financiero</button>
-        <button onclick="exportPosDB()" class="text-[10px] text-slate-500 hover:text-emerald-400 flex items-center gap-1 transition bg-slate-800/50 px-2.5 py-1.5 rounded-lg border border-slate-700/50"><i data-lucide="download" class="w-3 h-3"></i>Exportar</button>
-    </div>
+<div class="px-5 py-2.5 border-b border-slate-800/60 flex items-center justify-end gap-2 bg-slate-900/95 backdrop-blur-xl">
+    <button id="btn-pos-goto-advisor" onclick="goTo('advisor')" class="pos-btn bg-gradient-to-r from-sky-600 to-indigo-600 hover:from-sky-500 hover:to-indigo-500 text-white text-[11px] font-semibold shadow-lg shadow-sky-600/20 px-3 py-1.5"><i data-lucide="brain-circuit" class="w-3.5 h-3.5"></i>Asesor Financiero</button>
+    <button onclick="exportPosDB()" class="text-[10px] text-slate-500 hover:text-emerald-400 flex items-center gap-1 transition bg-slate-800/50 px-2.5 py-1.5 rounded-lg border border-slate-700/50"><i data-lucide="download" class="w-3 h-3"></i>Exportar</button>
 </div>
 
 <!-- POS Tabs -->
